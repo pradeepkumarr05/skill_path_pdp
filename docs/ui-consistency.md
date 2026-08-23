@@ -15,8 +15,6 @@ The palette uses strong solids, high contrast, and controlled accent color. Avoi
 | `skillpath.forest` | `#123D35` | Secondary solid brand block |
 | `skillpath.teal` | `#00A884` | Active progress and successful interaction |
 | `skillpath.citron` | `#D7FF4F` | Signature highlight and status emphasis |
-| `skillpath.vermilion` | `#E85D3F` | Strong secondary feature block |
-| `skillpath.clay` | `#C99663` | Warm supporting accent |
 | `skillpath.cream` | `#F7F0E6` | Dark-panel text and input surfaces |
 | `skillpath.paper` | `#FFFCF6` | Form surface |
 | `skillpath.line` | `#D9CDBE` | Borders and separators |
@@ -63,4 +61,4 @@ The palette uses strong solids, high contrast, and controlled accent color. Avoi
 - Floating decorative blobs, orbs, bokeh, or abstract AI-looking shapes.
 - Exposing all architecture modules at once.
 - Placeholder text that looks like final product copy.
-- Filler status labels such as "secure entry", "readiness gate", or "evidence trail" unless those terms become real product objects.
+- Filler status labels that do not map to real product objects.

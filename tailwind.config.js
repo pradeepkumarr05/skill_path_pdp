@@ -10,8 +10,6 @@ export default {
           forest: '#123D35',
           teal: '#00A884',
           citron: '#D7FF4F',
-          vermilion: '#E85D3F',
-          clay: '#C99663',
           cream: '#F7F0E6',
           paper: '#FFFCF6',
           line: '#D9CDBE',
