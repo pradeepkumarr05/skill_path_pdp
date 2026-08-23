@@ -29,7 +29,7 @@ The local development command starts:
 
 ## Current Scope
 
-Login / Sign Up and Profile Setup are implemented. Future modules will be added as separate approved pages.
+Login / Sign Up, Profile Setup, and Assessment Guidelines are implemented. Future modules will be added as separate approved pages.
 
 ## Documentation
 

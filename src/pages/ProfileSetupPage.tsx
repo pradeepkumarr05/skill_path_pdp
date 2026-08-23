@@ -6,6 +6,7 @@ import {
   Briefcase,
   Check,
   CheckCircle,
+  FileArrowUp,
   GraduationCap,
   LockSimple,
   PencilSimple,
@@ -20,19 +21,23 @@ import type { LoginMethod } from './LoginPage';
 interface ProfileSetupPageProps {
   lastLoginMethod: LoginMethod | null;
   onBack: () => void;
+  onComplete: (profile: ProfileSetupResult) => void;
 }
 
 type Gender = 'Female' | 'Male' | 'Non-binary' | 'Prefer not to say';
 type Qualification = 'High School' | 'Diploma' | 'Bachelor Degree' | 'Master Degree' | 'Doctorate';
-type Domain =
-  | 'Frontend Engineering'
-  | 'Backend Engineering'
-  | 'Full Stack Engineering'
-  | 'Data Science and AI'
-  | 'DevOps and Cloud'
-  | 'Cybersecurity'
-  | 'Mobile Engineering'
-  | 'QA and Test Automation';
+type Domain = 'Full Stack Engineering' | 'Data Science and AI' | 'DevOps and Cloud' | 'Cybersecurity' | 'Mobile Engineering' | 'Networks and IoT';
+
+export interface ProfileSetupResult {
+  name: string;
+  email: string;
+  qualification: Qualification;
+  domain: Domain;
+  interestedRoles: string[];
+  claimedSkills: string[];
+  resumeFileName?: string;
+  transcriptFileName?: string;
+}
 
 const genderOptions: Gender[] = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
 const qualificationOptions: Qualification[] = ['High School', 'Diploma', 'Bachelor Degree', 'Master Degree', 'Doctorate'];
@@ -53,7 +58,8 @@ const collegeOptions = [
 ];
 
 const cityOptions = ['Bengaluru', 'Chennai', 'Delhi NCR', 'Hyderabad', 'Mumbai', 'Pune', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Other'];
-const degreeOptions = ['B.Tech', 'B.E.', 'B.Sc', 'BCA', 'M.Tech', 'M.E.', 'M.Sc', 'MCA', 'Diploma', 'Other'];
+const degreeOptions = ['Diploma', 'B.Tech', 'B.E.', 'B.Sc', 'BCA', 'M.Tech', 'M.E.', 'M.Sc', 'MCA', 'PhD', 'Other'];
+const ugDegreeOptions = ['B.Tech', 'B.E.', 'B.Sc', 'BCA', 'B.Voc', 'Other'];
 const branchOptions = [
   'Computer Science and Engineering',
   'Information Technology',
@@ -66,49 +72,49 @@ const branchOptions = [
   'Other',
 ];
 const boardOptions = ['CBSE', 'ICSE', 'State Board', 'NIOS', 'IB', 'Other'];
-
 const years = Array.from({ length: 18 }, (_, index) => String(2028 - index));
 
-const domainOptions: Domain[] = [
-  'Frontend Engineering',
-  'Backend Engineering',
-  'Full Stack Engineering',
-  'Data Science and AI',
-  'DevOps and Cloud',
-  'Cybersecurity',
-  'Mobile Engineering',
-  'QA and Test Automation',
-];
+const domainOptions: Domain[] = ['Full Stack Engineering', 'Data Science and AI', 'DevOps and Cloud', 'Cybersecurity', 'Mobile Engineering', 'Networks and IoT'];
 
 const rolesByDomain: Record<Domain, string[]> = {
-  'Frontend Engineering': ['Frontend Developer', 'React Developer', 'UI Engineer', 'Web Performance Engineer'],
-  'Backend Engineering': ['Backend Developer', 'API Engineer', 'Platform Engineer', 'Node.js Developer'],
-  'Full Stack Engineering': ['Full Stack Developer', 'MERN Developer', 'Product Engineer', 'SaaS Engineer'],
-  'Data Science and AI': ['Data Analyst', 'Data Scientist', 'Machine Learning Engineer', 'AI Application Engineer'],
-  'DevOps and Cloud': ['DevOps Engineer', 'Cloud Engineer', 'Site Reliability Engineer', 'Infrastructure Engineer'],
-  Cybersecurity: ['Security Analyst', 'Application Security Engineer', 'SOC Analyst', 'Cloud Security Engineer'],
-  'Mobile Engineering': ['Android Developer', 'iOS Developer', 'React Native Developer', 'Flutter Developer'],
-  'QA and Test Automation': ['QA Engineer', 'Automation Test Engineer', 'SDET', 'Performance Test Engineer'],
+  'Full Stack Engineering': ['Full Stack Developer Trainee', 'Associate Software Engineer', 'Junior MERN Developer', 'Product Engineering Intern'],
+  'Data Science and AI': ['Data Analyst Trainee', 'Junior Data Scientist', 'ML Engineer Trainee', 'AI Application Developer'],
+  'DevOps and Cloud': ['Cloud Engineer Trainee', 'DevOps Engineer Trainee', 'Junior SRE', 'Infrastructure Support Engineer'],
+  Cybersecurity: ['Security Analyst Trainee', 'SOC Analyst L1', 'Junior Application Security Analyst', 'Cloud Security Trainee'],
+  'Mobile Engineering': ['Android Developer Trainee', 'iOS Developer Trainee', 'React Native Developer', 'Flutter Developer Trainee'],
+  'Networks and IoT': ['Network Engineer Trainee', 'IoT Developer Trainee', 'Embedded Systems Trainee', 'NOC Engineer L1'],
 };
 
 const skillsByDomain: Record<Domain, string[]> = {
-  'Frontend Engineering': ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Next.js', 'Accessibility', 'Responsive UI', 'Testing Library'],
-  'Backend Engineering': ['Node.js', 'Express', 'REST APIs', 'PostgreSQL', 'MongoDB', 'Authentication', 'Caching', 'System Design', 'Unit Testing'],
-  'Full Stack Engineering': ['React', 'Node.js', 'TypeScript', 'REST APIs', 'PostgreSQL', 'MongoDB', 'Auth Flows', 'Deployment', 'Testing'],
-  'Data Science and AI': ['Python', 'SQL', 'Pandas', 'NumPy', 'Data Visualization', 'Machine Learning', 'Model Evaluation', 'Prompting', 'Statistics'],
-  'DevOps and Cloud': ['Linux', 'Docker', 'Kubernetes', 'AWS', 'CI/CD', 'Terraform', 'Monitoring', 'Networking', 'Shell Scripting'],
-  Cybersecurity: ['Network Security', 'OWASP', 'Threat Modeling', 'SIEM', 'Incident Response', 'Cloud Security', 'Python Scripting', 'Linux'],
-  'Mobile Engineering': ['Kotlin', 'Swift', 'React Native', 'Flutter', 'Mobile UI', 'State Management', 'API Integration', 'App Store Release'],
-  'QA and Test Automation': ['Manual Testing', 'Selenium', 'Playwright', 'Cypress', 'API Testing', 'JMeter', 'Test Planning', 'Bug Reporting'],
+  'Full Stack Engineering': ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'REST APIs', 'PostgreSQL', 'MongoDB', 'Git'],
+  'Data Science and AI': ['Python', 'SQL', 'Pandas', 'NumPy', 'Data Visualization', 'Machine Learning Basics', 'Statistics', 'Prompting', 'Model Evaluation'],
+  'DevOps and Cloud': ['Linux', 'Docker', 'AWS Basics', 'CI/CD', 'GitHub Actions', 'Networking Basics', 'Shell Scripting', 'Monitoring Basics'],
+  Cybersecurity: ['Linux', 'Network Security', 'OWASP Basics', 'Threat Modeling', 'SIEM Basics', 'Python Scripting', 'Incident Response Basics'],
+  'Mobile Engineering': ['Kotlin', 'Swift Basics', 'React Native', 'Flutter', 'Mobile UI', 'State Management', 'API Integration', 'App Release Basics'],
+  'Networks and IoT': ['Computer Networks', 'TCP/IP', 'Routing and Switching', 'Linux', 'Arduino', 'Raspberry Pi', 'MQTT', 'Sensors', 'Embedded C'],
+};
+
+const degreeDurationYears: Record<string, number> = {
+  Diploma: 3,
+  'B.Tech': 4,
+  'B.E.': 4,
+  'B.Sc': 3,
+  BCA: 3,
+  'M.Tech': 2,
+  'M.E.': 2,
+  'M.Sc': 2,
+  MCA: 2,
+  PhD: 5,
+  Other: 3,
 };
 
 const inputClass =
-  'h-12 w-full rounded-md border border-skillpath-line bg-skillpath-cream px-4 text-base font-bold text-skillpath-night shadow-soft transition focus:border-skillpath-focus disabled:cursor-not-allowed disabled:opacity-70';
+  'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition placeholder:text-skillpath-cream/45 focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
 const selectClass =
-  'h-12 w-full rounded-md border border-skillpath-line bg-skillpath-cream px-4 text-base font-bold text-skillpath-night shadow-soft transition focus:border-skillpath-focus disabled:cursor-not-allowed disabled:opacity-70';
+  'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
 const cardClass = 'rounded-lg border border-white/10 bg-skillpath-night text-skillpath-cream shadow-panel';
 
-export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPageProps) {
+export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: ProfileSetupPageProps) {
   const [firstName, setFirstName] = useState('Aarav');
   const [lastName, setLastName] = useState('Mehta');
   const [age, setAge] = useState('22');
@@ -120,6 +126,8 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
   const [collegeCity, setCollegeCity] = useState('Bengaluru');
   const [degree, setDegree] = useState('B.Tech');
   const [branch, setBranch] = useState('Computer Science and Engineering');
+  const [ugDegree, setUgDegree] = useState('B.Tech');
+  const [ugBranch, setUgBranch] = useState('Computer Science and Engineering');
   const [cgpa, setCgpa] = useState('8.2');
   const [startYear, setStartYear] = useState('2021');
   const [endYear, setEndYear] = useState('2025');
@@ -127,24 +135,32 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
   const [twelfthPercentage, setTwelfthPercentage] = useState('84');
   const [board, setBoard] = useState('CBSE');
   const [domain, setDomain] = useState<Domain>('Full Stack Engineering');
-  const [interestedRoles, setInterestedRoles] = useState<string[]>(['Full Stack Developer']);
+  const [interestedRoles, setInterestedRoles] = useState<string[]>(['Full Stack Developer Trainee']);
   const [selectedSkills, setSelectedSkills] = useState<string[]>(['React', 'Node.js', 'TypeScript']);
+  const [noExistingSkills, setNoExistingSkills] = useState(false);
   const [customSkill, setCustomSkill] = useState('');
+  const [resumeFileName, setResumeFileName] = useState('');
+  const [transcriptFileName, setTranscriptFileName] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [locked, setLocked] = useState(false);
 
   const isHighSchool = qualification === 'High School';
+  const needsUgDetails = degree.startsWith('M') || qualification === 'Master Degree';
   const currentRoles = rolesByDomain[domain];
   const currentSkills = skillsByDomain[domain];
   const resolvedCollegeName = collegeName === 'Other' ? customCollegeName : collegeName;
+  const expectedDuration = degreeDurationYears[degree] ?? 3;
+  const studyDuration = Number(endYear) - Number(startYear);
+  const validStudyDuration = isHighSchool || studyDuration === expectedDuration;
   const fieldsDisabled = locked || reviewOpen;
+  const claimedSkills = noExistingSkills ? [] : selectedSkills;
 
   const completion = useMemo(() => {
     const commonFields = [firstName, lastName, age, gender, email, qualification, domain];
     const educationFields = isHighSchool
       ? [tenthPercentage, twelfthPercentage, board]
-      : [resolvedCollegeName, collegeCity, degree, branch, cgpa, startYear, endYear];
-    const choiceFields = [interestedRoles.length ? 'roles' : '', selectedSkills.length ? 'skills' : ''];
+      : [resolvedCollegeName, collegeCity, degree, branch, cgpa, startYear, endYear, validStudyDuration ? 'valid' : '', needsUgDetails ? ugDegree : 'ug-na', needsUgDetails ? ugBranch : 'ug-na'];
+    const choiceFields = [interestedRoles.length ? 'roles' : '', noExistingSkills || selectedSkills.length ? 'skills' : ''];
     const allFields = [...commonFields, ...educationFields, ...choiceFields];
     const completed = allFields.filter((value) => String(value).trim().length > 0).length;
     return Math.round((completed / allFields.length) * 100);
@@ -163,12 +179,17 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
     interestedRoles.length,
     isHighSchool,
     lastName,
+    needsUgDetails,
+    noExistingSkills,
     qualification,
     resolvedCollegeName,
     selectedSkills.length,
     startYear,
     tenthPercentage,
     twelfthPercentage,
+    ugBranch,
+    ugDegree,
+    validStudyDuration,
   ]);
 
   const canSubmit =
@@ -177,10 +198,18 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
     Number(age) >= 13 &&
     email.includes('@') &&
     interestedRoles.length > 0 &&
-    selectedSkills.length > 0 &&
+    (noExistingSkills || selectedSkills.length > 0) &&
     (isHighSchool
       ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 && board.length > 0
-      : resolvedCollegeName.trim().length > 1 && collegeCity.length > 0 && degree.length > 0 && branch.length > 0 && Number(cgpa) > 0 && startYear.length > 0 && endYear.length > 0);
+      : resolvedCollegeName.trim().length > 1 &&
+        collegeCity.length > 0 &&
+        degree.length > 0 &&
+        branch.length > 0 &&
+        Number(cgpa) > 0 &&
+        startYear.length > 0 &&
+        endYear.length > 0 &&
+        validStudyDuration &&
+        (!needsUgDetails || (ugDegree.length > 0 && ugBranch.length > 0)));
 
   const toggleRole = (role: string) => {
     if (fieldsDisabled) return;
@@ -188,13 +217,25 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
   };
 
   const toggleSkill = (skill: string) => {
-    if (fieldsDisabled) return;
+    if (fieldsDisabled || noExistingSkills) return;
     setSelectedSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]));
+  };
+
+  const toggleNoExistingSkills = () => {
+    if (fieldsDisabled) return;
+    setNoExistingSkills((current) => {
+      const next = !current;
+      if (next) {
+        setSelectedSkills([]);
+        setCustomSkill('');
+      }
+      return next;
+    });
   };
 
   const addCustomSkill = () => {
     const nextSkill = customSkill.trim();
-    if (!nextSkill || selectedSkills.includes(nextSkill) || fieldsDisabled) return;
+    if (!nextSkill || selectedSkills.includes(nextSkill) || fieldsDisabled || noExistingSkills) return;
     setSelectedSkills((current) => [...current, nextSkill]);
     setCustomSkill('');
   };
@@ -204,6 +245,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
     setDomain(nextDomain);
     setInterestedRoles([]);
     setSelectedSkills([]);
+    setNoExistingSkills(false);
     setCustomSkill('');
   };
 
@@ -213,10 +255,26 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
     setReviewOpen(true);
   };
 
+  const profileResult: ProfileSetupResult = {
+    name: `${firstName} ${lastName}`.trim(),
+    email,
+    qualification,
+    domain,
+    interestedRoles,
+    claimedSkills,
+    resumeFileName: resumeFileName || undefined,
+    transcriptFileName: transcriptFileName || undefined,
+  };
+
   const confirmSubmission = () => {
     if (!canSubmit) return;
     setLocked(true);
     setReviewOpen(true);
+  };
+
+  const continueToGuidelines = () => {
+    if (!locked) return;
+    onComplete(profileResult);
   };
 
   const editSubmission = () => {
@@ -230,7 +288,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
         <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <SkillPathLogo />
-            <span className="rounded-full bg-skillpath-citron px-3 py-1.5 text-sm font-black text-skillpath-night lg:hidden">2/4 complete</span>
+            <span className="rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:hidden">2/4 complete</span>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="min-w-[240px]">
@@ -239,10 +297,10 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                 <span>{completion}%</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-white/14">
-                <div className="h-full rounded-full bg-skillpath-citron transition-all" style={{ width: `${completion}%` }} />
+                <div className="h-full rounded-full bg-skillpath-teal transition-all" style={{ width: `${completion}%` }} />
               </div>
             </div>
-            <span className="hidden rounded-full bg-skillpath-citron px-3 py-1.5 text-sm font-black text-skillpath-night lg:inline-flex">2/4 complete</span>
+            <span className="hidden rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:inline-flex">2/4 complete</span>
           </div>
         </header>
 
@@ -256,7 +314,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                 </p>
               </div>
               <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/14 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-citron disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/14 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 onClick={onBack}
                 disabled={locked}
@@ -267,7 +325,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
             </div>
 
             {locked ? (
-              <div className="mb-5 flex items-start gap-3 rounded-lg border border-skillpath-citron bg-skillpath-citron p-4 text-skillpath-night">
+              <div className="mb-5 flex items-start gap-3 rounded-lg border border-skillpath-teal bg-skillpath-teal p-4 text-skillpath-night">
                 <LockSimple className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
                 <p className="text-sm font-black">Profile submitted. Details are locked for this session.</p>
               </div>
@@ -276,7 +334,6 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
             <div className="grid gap-5 xl:grid-cols-2">
               <section className={cardClass}>
                 <SectionHeader icon={<UserCircle className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Basic details" />
-
                 <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
                   <Field label="First name">
                     <input className={inputClass} value={firstName} onChange={(event) => setFirstName(event.target.value)} disabled={fieldsDisabled} autoComplete="given-name" />
@@ -302,7 +359,6 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
 
               <section className={cardClass}>
                 <SectionHeader icon={<GraduationCap className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Education" />
-
                 <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
                   <Field label="Qualification">
                     <select className={selectClass} value={qualification} onChange={(event) => setQualification(event.target.value as Qualification)} disabled={fieldsDisabled}>
@@ -363,6 +419,24 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                           ))}
                         </select>
                       </Field>
+                      {needsUgDetails ? (
+                        <>
+                          <Field label="UG degree">
+                            <select className={selectClass} value={ugDegree} onChange={(event) => setUgDegree(event.target.value)} disabled={fieldsDisabled}>
+                              {ugDegreeOptions.map((option) => (
+                                <option key={option}>{option}</option>
+                              ))}
+                            </select>
+                          </Field>
+                          <Field label="UG branch">
+                            <select className={selectClass} value={ugBranch} onChange={(event) => setUgBranch(event.target.value)} disabled={fieldsDisabled}>
+                              {branchOptions.map((option) => (
+                                <option key={option}>{option}</option>
+                              ))}
+                            </select>
+                          </Field>
+                        </>
+                      ) : null}
                       <Field label="CGPA">
                         <input className={inputClass} type="number" min="0" max="10" step="0.1" value={cgpa} onChange={(event) => setCgpa(event.target.value)} disabled={fieldsDisabled} />
                       </Field>
@@ -380,26 +454,37 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                           ))}
                         </select>
                       </Field>
+                      {!validStudyDuration ? (
+                        <div className="sm:col-span-2 rounded-md border border-skillpath-danger bg-white/8 p-3 text-sm font-bold text-skillpath-cream">
+                          Selected degree expects a {expectedDuration}-year study period.
+                        </div>
+                      ) : null}
                     </>
                   )}
                 </div>
               </section>
 
               <section className={`${cardClass} xl:col-span-2`}>
-                <SectionHeader icon={<Briefcase className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Domain and roles" />
+                <SectionHeader icon={<FileArrowUp className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Documents" />
+                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+                  <FileField label="Resume" fileName={resumeFileName} disabled={fieldsDisabled} onChange={setResumeFileName} />
+                  <FileField label="Academic transcript" fileName={transcriptFileName} disabled={fieldsDisabled} onChange={setTranscriptFileName} />
+                </div>
+              </section>
 
+              <section className={`${cardClass} xl:col-span-2`}>
+                <SectionHeader icon={<Briefcase className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Domain and roles" />
                 <div className="grid gap-5 p-4 sm:p-5 xl:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
                   <div>
-                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-citron">Interested domain</h3>
+                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-teal">Interested domain</h3>
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
                       {domainOptions.map((option) => (
                         <ChoiceButton key={option} label={option} selected={domain === option} disabled={fieldsDisabled} onClick={() => handleDomainChange(option)} />
                       ))}
                     </div>
                   </div>
-
                   <div>
-                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-citron">Interested roles</h3>
+                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-teal">Interested roles</h3>
                     <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
                       {currentRoles.map((role) => (
                         <ChoiceButton key={role} label={role} selected={interestedRoles.includes(role)} disabled={fieldsDisabled} onClick={() => toggleRole(role)} />
@@ -411,27 +496,28 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
 
               <section className={`${cardClass} xl:col-span-2`}>
                 <SectionHeader icon={<Stack className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Existing skills" />
-
                 <div className="p-4 sm:p-5">
+                  <div className="mb-3">
+                    <ChoiceButton label="None yet" selected={noExistingSkills} disabled={fieldsDisabled} onClick={toggleNoExistingSkills} />
+                  </div>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                     {currentSkills.map((skill) => (
-                      <ChoiceButton key={skill} label={skill} selected={selectedSkills.includes(skill)} disabled={fieldsDisabled} onClick={() => toggleSkill(skill)} />
+                      <ChoiceButton key={skill} label={skill} selected={selectedSkills.includes(skill)} disabled={fieldsDisabled || noExistingSkills} onClick={() => toggleSkill(skill)} />
                     ))}
                   </div>
-
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <input
                       className={inputClass}
                       value={customSkill}
                       onChange={(event) => setCustomSkill(event.target.value)}
                       placeholder="Add another skill"
-                      disabled={fieldsDisabled}
+                      disabled={fieldsDisabled || noExistingSkills}
                     />
                     <button
-                      className="inline-flex h-12 items-center justify-center rounded-md bg-skillpath-citron px-5 text-sm font-black text-skillpath-night transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-12 items-center justify-center rounded-md bg-skillpath-teal px-5 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream disabled:cursor-not-allowed disabled:opacity-50"
                       type="button"
                       onClick={addCustomSkill}
-                      disabled={fieldsDisabled || customSkill.trim().length === 0}
+                      disabled={fieldsDisabled || noExistingSkills || customSkill.trim().length === 0}
                     >
                       Add skill
                     </button>
@@ -442,7 +528,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
           </section>
 
           <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-citron/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
+            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
               <div className="mb-5 flex items-center justify-between gap-4">
                 <h2 className="text-2xl font-black">{reviewOpen ? 'Final review' : 'Setup status'}</h2>
                 <CheckCircle className="h-7 w-7 text-skillpath-teal" weight={locked ? 'fill' : 'bold'} aria-hidden="true" />
@@ -460,7 +546,9 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                       ['Study period', isHighSchool ? 'School education' : `${startYear} to ${endYear}`],
                       ['Domain', domain],
                       ['Roles', interestedRoles.length ? interestedRoles.join(', ') : 'Select at least one'],
-                      ['Skills', selectedSkills.length ? selectedSkills.join(', ') : 'Select at least one'],
+                      ['Skills', noExistingSkills ? 'None yet' : selectedSkills.length ? selectedSkills.join(', ') : 'Select at least one'],
+                      ['Resume', resumeFileName || 'Not uploaded'],
+                      ['Transcript', transcriptFileName || 'Not uploaded'],
                       ['Signed in with', lastLoginMethod ?? 'email'],
                     ]}
                   />
@@ -468,9 +556,9 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                   <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
                     <div className="mb-3 flex items-start gap-2">
                       {locked ? (
-                        <SealCheck className="mt-0.5 h-5 w-5 flex-none text-skillpath-citron" weight="fill" aria-hidden="true" />
+                        <SealCheck className="mt-0.5 h-5 w-5 flex-none text-skillpath-teal" weight="fill" aria-hidden="true" />
                       ) : (
-                        <PencilSimple className="mt-0.5 h-5 w-5 flex-none text-skillpath-citron" weight="bold" aria-hidden="true" />
+                        <PencilSimple className="mt-0.5 h-5 w-5 flex-none text-skillpath-teal" weight="bold" aria-hidden="true" />
                       )}
                       <p className="text-sm font-bold leading-5">
                         {locked ? 'Submitted. Changes are disabled.' : 'Review carefully. Once submitted, these details cannot be changed in this session.'}
@@ -479,39 +567,46 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
                     {!locked ? (
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                         <button
-                          className="inline-flex h-11 items-center justify-center rounded-md border border-white/18 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-citron"
+                          className="inline-flex h-11 items-center justify-center rounded-md border border-white/18 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal"
                           type="button"
                           onClick={editSubmission}
                         >
                           Edit
                         </button>
                         <button
-                          className="inline-flex h-11 items-center justify-center rounded-md bg-skillpath-citron px-4 text-sm font-black text-skillpath-night transition hover:bg-white"
+                          className="inline-flex h-11 items-center justify-center rounded-md bg-skillpath-teal px-4 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream"
                           type="button"
                           onClick={confirmSubmission}
                         >
                           Submit
                         </button>
                       </div>
-                    ) : null}
+                    ) : (
+                      <button
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-skillpath-teal px-4 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream"
+                        type="button"
+                        onClick={continueToGuidelines}
+                      >
+                        Continue to assessment guidelines
+                        <ArrowRight className="h-4 w-4" weight="bold" aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (
                 <>
                   <div className="space-y-3">
                     <StatusRow label="Basic details" done={firstName.trim().length > 1 && lastName.trim().length > 1 && email.includes('@')} />
-                    <StatusRow label="Education" done={isHighSchool ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 : resolvedCollegeName.trim().length > 1 && Number(cgpa) > 0} />
+                    <StatusRow label="Education" done={isHighSchool ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 : resolvedCollegeName.trim().length > 1 && Number(cgpa) > 0 && validStudyDuration} />
                     <StatusRow label="Domain and roles" done={interestedRoles.length > 0} />
-                    <StatusRow label="Existing skills" done={selectedSkills.length > 0} />
+                    <StatusRow label="Existing skills" done={noExistingSkills || selectedSkills.length > 0} />
                   </div>
-
                   {!canSubmit ? (
                     <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
                       <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
                       Complete all required fields before review.
                     </div>
                   ) : null}
-
                   <button
                     className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-skillpath-night px-4 text-base font-black text-skillpath-cream transition hover:bg-skillpath-forest disabled:cursor-not-allowed disabled:bg-skillpath-muted"
                     type="submit"
@@ -533,7 +628,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack }: ProfileSetupPagePr
 function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4 sm:px-5">
-      <div className="grid h-10 w-10 place-items-center rounded-md bg-skillpath-citron text-skillpath-night">{icon}</div>
+      <div className="grid h-10 w-10 place-items-center rounded-md bg-skillpath-teal text-skillpath-night">{icon}</div>
       <h2 className="text-xl font-black text-skillpath-cream">{title}</h2>
     </div>
   );
@@ -548,13 +643,27 @@ function Field({ label, children, className = '' }: { label: string; children: R
   );
 }
 
+function FileField({ label, fileName, disabled, onChange }: { label: string; fileName: string; disabled: boolean; onChange: (fileName: string) => void }) {
+  return (
+    <label className="block rounded-md border border-white/12 bg-white/8 p-4">
+      <span className="mb-3 block text-sm font-black text-skillpath-cream">{label}</span>
+      <input
+        className="block w-full text-sm font-bold text-skillpath-cream file:mr-3 file:rounded-md file:border-0 file:bg-skillpath-teal file:px-4 file:py-2 file:text-sm file:font-black file:text-skillpath-night"
+        type="file"
+        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.files?.[0]?.name ?? '')}
+      />
+      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional'}</span>
+    </label>
+  );
+}
+
 function ChoiceButton({ label, selected, disabled, onClick }: { label: string; selected: boolean; disabled: boolean; onClick: () => void }) {
   return (
     <button
       className={`flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        selected
-          ? 'border-skillpath-citron bg-skillpath-citron text-skillpath-night'
-          : 'border-white/12 bg-white/8 text-skillpath-cream hover:border-skillpath-citron'
+        selected ? 'border-skillpath-teal bg-skillpath-teal text-skillpath-night' : 'border-white/12 bg-white/8 text-skillpath-cream hover:border-skillpath-teal'
       }`}
       type="button"
       onClick={onClick}

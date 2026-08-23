@@ -2,7 +2,7 @@
 
 ## Current Page Checks
 
-Login and Profile Setup were validated locally:
+Login, Profile Setup, and Assessment Guidelines were validated locally:
 
 ```bash
 npm run build

@@ -6,10 +6,11 @@ The active app is being built one page at a time. The current implemented module
 
 - Page 1: Login / Sign Up
 - Page 2: Profile Setup / Basic Details
+- Page 3: Assessment Guidelines
 
 The next approved module will be:
 
-- Page 3: Domain Selection
+- Page 4: Live Chatbot Assessment
 
 ## Current Runtime
 
@@ -23,16 +24,15 @@ The next approved module will be:
 
 1. Login / Sign Up
 2. Profile Setup / Basic Details
-3. Domain Selection
-4. Skill Selection
-5. Chatbot Assessment
-6. MCQ Assessment
-7. Gap Detection and Skill Scoring
-8. Learning Roadmap
-9. LearnBot Sessions
-10. Mock and Interview
-11. Performance Review
-12. Final Review and Certification
-13. Fallback Remediation Loop
+3. Assessment Guidelines
+4. Live Chatbot Assessment
+5. MCQ Assessment
+6. Gap Detection and Skill Scoring
+7. Learning Roadmap
+8. LearnBot Sessions
+9. Mock and Interview
+10. Performance Review
+11. Final Review and Certification
+12. Fallback Remediation Loop
 
 Each module should be implemented, reviewed, and approved before moving to the next.
