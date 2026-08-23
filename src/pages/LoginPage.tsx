@@ -2,16 +2,14 @@ import { FormEvent, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
-  ChartLineUp,
   CheckCircle,
   Eye,
   EyeSlash,
   GithubLogo,
   GoogleLogo,
   ShieldCheck,
-  Target,
-  UserFocus,
 } from '@phosphor-icons/react';
+import { SkillPathLogo } from '../components/SkillPathLogo';
 
 export type LoginMethod = 'email' | 'google' | 'github' | 'leetcode';
 
@@ -24,17 +22,6 @@ const providerButtons: Array<{ method: LoginMethod; label: string; icon: 'google
   { method: 'github', label: 'GitHub', icon: 'github' },
   { method: 'leetcode', label: 'LeetCode', icon: 'leetcode' },
 ];
-
-function SkillPathLogo() {
-  return (
-    <svg className="h-12 w-[170px]" viewBox="0 0 170 48" role="img" aria-label="SkillPath">
-      <text className="logo-script fill-skillpath-cream text-[34px] font-semibold" x="2" y="34">
-        SkillPath
-      </text>
-      <path d="M12 40 C45 45, 91 44, 154 37" fill="none" stroke="#D7FF4F" strokeLinecap="round" strokeWidth="3" />
-    </svg>
-  );
-}
 
 function ProviderIcon({ icon }: { icon: 'google' | 'github' | 'leetcode' }) {
   if (icon === 'github') {
@@ -80,7 +67,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
   return (
     <main className="auth-backdrop min-h-screen px-4 py-5 text-skillpath-cream sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-40px)] w-full max-w-7xl gap-5 lg:grid-cols-[minmax(420px,0.9fr)_minmax(420px,0.7fr)]">
+      <div className="grid min-h-[calc(100vh-40px)] w-full gap-5 lg:grid-cols-[minmax(420px,1fr)_minmax(420px,520px)]">
         <section className="auth-panel-grid relative overflow-hidden rounded-lg border border-white/12 bg-skillpath-night shadow-panel">
           <div className="absolute inset-y-0 right-0 w-1/3 bg-skillpath-forest" />
           <div className="relative flex h-full min-h-[620px] flex-col justify-between p-6 sm:p-8 lg:p-10">
@@ -92,10 +79,6 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             </header>
 
             <motion.div className="max-w-[680px]" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-skillpath-citron px-3 py-1.5 text-sm font-black text-skillpath-night">
-                <UserFocus className="h-4 w-4" weight="bold" aria-hidden="true" />
-                Secure entry
-              </p>
               <h1 className="text-5xl font-black leading-[0.95] text-skillpath-cream sm:text-6xl lg:text-7xl">
                 Start with verified access. Build toward verified readiness.
               </h1>
@@ -109,7 +92,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-black text-skillpath-night">Entry progress</p>
-                    <p className="text-sm font-medium text-skillpath-muted">Account access is the first required gate.</p>
+                    <p className="text-sm font-medium text-skillpath-muted">Login unlocks profile setup.</p>
                   </div>
                   <CheckCircle className="h-6 w-6 text-skillpath-teal" weight="fill" aria-hidden="true" />
                 </div>
@@ -121,17 +104,6 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
                   <span>Profile next</span>
                 </div>
               </div>
-
-              <div className="grid gap-3">
-                <div className="rounded-lg bg-skillpath-vermilion p-4 text-white shadow-soft">
-                  <Target className="mb-3 h-6 w-6" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Readiness gate</p>
-                </div>
-                <div className="rounded-lg bg-skillpath-citron p-4 text-skillpath-night shadow-soft">
-                  <ChartLineUp className="mb-3 h-6 w-6" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Evidence trail</p>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -139,7 +111,6 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
         <section className="flex items-center justify-center rounded-lg bg-skillpath-paper p-5 text-skillpath-ink shadow-panel sm:p-8">
           <div className="w-full max-w-[430px]">
             <div className="mb-8">
-              <p className="text-sm font-black uppercase text-skillpath-teal">Account access</p>
               <h2 className="mt-2 text-4xl font-black tracking-normal text-skillpath-night">Sign in</h2>
             </div>
 

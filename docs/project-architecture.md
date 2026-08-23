@@ -5,16 +5,17 @@
 The active app is being built one page at a time. The current implemented module is:
 
 - Page 1: Login / Sign Up
+- Page 2: Profile Setup / Basic Details
 
 The next approved module will be:
 
-- Page 2: Profile Setup / Basic Details
+- Page 3: Domain Selection
 
 ## Current Runtime
 
 - Vite serves the React application.
-- React local state handles the Page 1 flow.
-- Authentication is mocked locally.
+- React local state handles the current page flow.
+- Authentication is local for the current build.
 - Provider login buttons simulate identity handoff.
 - No backend, database, AI provider, or realtime event layer is active yet.
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LoginPage, type LoginMethod } from './pages/LoginPage';
-import { ProfileSetupPlaceholder } from './pages/ProfileSetupPlaceholder';
+import { ProfileSetupPage } from './pages/ProfileSetupPage';
 
 type AppStep = 'login' | 'profile';
 
@@ -18,7 +18,7 @@ export default function App() {
       {step === 'login' ? (
         <LoginPage onAuthenticated={handleLoginSuccess} />
       ) : (
-        <ProfileSetupPlaceholder lastLoginMethod={lastLoginMethod} onBack={() => setStep('login')} />
+        <ProfileSetupPage lastLoginMethod={lastLoginMethod} onBack={() => setStep('login')} />
       )}
     </>
   );

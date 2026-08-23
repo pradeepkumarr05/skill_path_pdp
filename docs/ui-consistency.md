@@ -35,12 +35,15 @@ The palette uses strong solids, high contrast, and controlled accent color. Avoi
 ## Layout Rules
 
 - Build one step per page.
+- Use the full available desktop width. Avoid narrow centered app shells unless the page is a focused modal or document.
+- Every page must be mobile responsive, with controls stacking cleanly below tablet widths.
 - Do not expose the full pipeline as a diagram inside the UI.
 - Progress should appear like a professional product status: `1/4 complete`, a compact progress bar, or a concise next-step marker.
 - Every page must have one primary action and one clear next transition.
 - Use 8px radius for cards, forms, buttons, and panels.
 - Keep surfaces stable. Buttons, inputs, and progress indicators must not shift when state changes.
 - Use responsive grids with explicit minimum widths so the UI remains composed on mobile.
+- Avoid decorative kicker labels above headings unless the label carries essential product state.
 
 ## Components
 
@@ -60,3 +63,4 @@ The palette uses strong solids, high contrast, and controlled accent color. Avoi
 - Floating decorative blobs, orbs, bokeh, or abstract AI-looking shapes.
 - Exposing all architecture modules at once.
 - Placeholder text that looks like final product copy.
+- Filler status labels such as "secure entry", "readiness gate", or "evidence trail" unless those terms become real product objects.
