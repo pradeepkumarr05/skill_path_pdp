@@ -5,25 +5,28 @@ export default {
     extend: {
       colors: {
         skillpath: {
-          ink: '#182522',
-          pine: '#102A27',
-          jade: '#2B8073',
-          copper: '#C87941',
-          saffron: '#C6A34A',
-          mist: '#F4F7F5',
-          paper: '#FFFFFF',
-          line: '#D7E0DB',
-          muted: '#66756F',
-          danger: '#B94A48',
-          focus: '#1D6F64'
+          ink: '#151515',
+          night: '#101314',
+          forest: '#123D35',
+          teal: '#00A884',
+          citron: '#D7FF4F',
+          vermilion: '#E85D3F',
+          clay: '#C99663',
+          cream: '#F7F0E6',
+          paper: '#FFFCF6',
+          line: '#D9CDBE',
+          muted: '#6E665D',
+          danger: '#BC3930',
+          focus: '#007A63'
         }
       },
       boxShadow: {
-        panel: '0 18px 48px rgba(16, 42, 39, 0.12)',
-        soft: '0 8px 22px rgba(24, 37, 34, 0.08)'
+        panel: '0 24px 60px rgba(16, 19, 20, 0.18)',
+        soft: '0 10px 24px rgba(21, 21, 21, 0.10)'
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Bricolage Grotesque Variable', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        logo: ['Newsreader Variable', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace']
       }
     }

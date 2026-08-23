@@ -1,5 +1,5 @@
 {
-  "name": "skillpath-prototype",
+  "name": "skillpath",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
     "framer-motion": "^11.11.17",
-    "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

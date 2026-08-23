@@ -2,56 +2,61 @@
 
 ## Product Feel
 
-SkillPath should feel like a serious assessment and career-readiness product, not a generic dashboard. The interface should be calm, precise, and credible. The login page sets the standard: enough visual character to feel owned, but restrained enough for repeated professional use.
+SkillPath should feel like a serious assessment and career-readiness product with a distinct identity. The interface should be confident, structured, and visually owned. Each page must feel like part of a real product flow, not a generic dashboard or architecture diagram.
 
 ## Palette
 
-The palette avoids common purple/blue SaaS gradients and avoids a one-note monochrome theme. It is built around deep pine, verdigris, muted saffron, and copper.
+The palette uses strong solids, high contrast, and controlled accent color. Avoid washed-out neutrals and default SaaS blues.
 
 | Token | Hex | Role |
 | --- | --- | --- |
-| `skillpath.ink` | `#182522` | Main text |
-| `skillpath.pine` | `#102A27` | Primary brand, main CTA, high-emphasis blocks |
-| `skillpath.jade` | `#2B8073` | Active progress, links, successful motion |
-| `skillpath.copper` | `#C87941` | Warm secondary emphasis |
-| `skillpath.saffron` | `#C6A34A` | Progress marker and selective highlight |
-| `skillpath.mist` | `#F4F7F5` | App background |
-| `skillpath.paper` | `#FFFFFF` | Forms and primary surfaces |
-| `skillpath.line` | `#D7E0DB` | Borders and separators |
-| `skillpath.muted` | `#66756F` | Secondary copy |
-| `skillpath.danger` | `#B94A48` | Validation and risk states |
-| `skillpath.focus` | `#1D6F64` | Keyboard focus and input focus |
-
-## Layout Rules
-
-- Build one step per page. Do not expose future modules as a single dashboard.
-- Every page must have one primary action and one clear next transition.
-- Use 8px radius for cards, forms, buttons, and panels.
-- Avoid cards inside cards. If a section needs internal grouping, use rows, separators, or subtle background bands.
-- Keep surfaces stable. Buttons, step indicators, inputs, and provider buttons must not shift when state changes.
-- Use responsive grids with explicit minimum widths so the UI remains composed on mobile.
+| `skillpath.ink` | `#151515` | Main text |
+| `skillpath.night` | `#101314` | App shell, brand panel, primary CTA |
+| `skillpath.forest` | `#123D35` | Secondary solid brand block |
+| `skillpath.teal` | `#00A884` | Active progress and successful interaction |
+| `skillpath.citron` | `#D7FF4F` | Signature highlight and status emphasis |
+| `skillpath.vermilion` | `#E85D3F` | Strong secondary feature block |
+| `skillpath.clay` | `#C99663` | Warm supporting accent |
+| `skillpath.cream` | `#F7F0E6` | Dark-panel text and input surfaces |
+| `skillpath.paper` | `#FFFCF6` | Form surface |
+| `skillpath.line` | `#D9CDBE` | Borders and separators |
+| `skillpath.muted` | `#6E665D` | Secondary copy |
+| `skillpath.danger` | `#BC3930` | Validation and risk states |
+| `skillpath.focus` | `#007A63` | Keyboard and input focus |
 
 ## Typography
 
-- Use `Inter` with system fallbacks.
+- Product UI uses `Bricolage Grotesque Variable`.
+- The SkillPath wordmark uses `Newsreader Variable` italic with a custom underline.
+- Do not use Inter or generic system-only typography for final page designs.
 - Do not use viewport-based font sizing.
-- Letter spacing remains `0`; use weight, color, and spacing for hierarchy.
-- Login page display text may be large, but forms and operational pages should use compact headings.
+- Letter spacing remains `0`; use weight, scale, and color for hierarchy.
+
+## Layout Rules
+
+- Build one step per page.
+- Do not expose the full pipeline as a diagram inside the UI.
+- Progress should appear like a professional product status: `1/4 complete`, a compact progress bar, or a concise next-step marker.
+- Every page must have one primary action and one clear next transition.
+- Use 8px radius for cards, forms, buttons, and panels.
+- Keep surfaces stable. Buttons, inputs, and progress indicators must not shift when state changes.
+- Use responsive grids with explicit minimum widths so the UI remains composed on mobile.
 
 ## Components
 
-- Inputs: 48px height, left icon when useful, clear focus border.
-- Buttons: icon plus text for commands; icon-only only when the icon is universally understood and has an accessible label.
-- Provider buttons: same height, same border, no decorative provider cards.
-- Progress indicators: short labels, visible state, and no oversized timeline graphics.
+- Inputs: 48px height, solid fill, clear focus border.
+- Buttons: strong solid primary action; provider buttons should be equal weight and visually balanced.
+- Icons: use Phosphor icons for app UI unless a page has a specific reason to use another set.
+- Progress indicators: concise product status, not an architecture pipeline.
 - Validation: inline, close to the field or action that caused it.
 
 ## What To Avoid
 
+- Mentions that the product is a demo or temporary build in user-facing UI.
 - Generic purple/blue gradients.
-- Beige or brown-dominant editorial palettes.
+- Thin, pale, low-contrast palettes.
 - Stock-photo login panels.
-- Oversized marketing hero copy.
+- Oversized marketing pages.
 - Floating decorative blobs, orbs, bokeh, or abstract AI-looking shapes.
 - Exposing all architecture modules at once.
 - Placeholder text that looks like final product copy.

@@ -2,7 +2,7 @@
 
 ## Current Build Scope
 
-The active prototype is being rebuilt one page at a time. The current implemented module is:
+The active app is being built one page at a time. The current implemented module is:
 
 - Page 1: Login / Sign Up
 

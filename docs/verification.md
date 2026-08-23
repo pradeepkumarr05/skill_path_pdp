@@ -2,7 +2,7 @@
 
 ## Current Page Checks
 
-The Page 1 prototype was validated locally:
+Page 1 was validated locally:
 
 ```bash
 npm run build
