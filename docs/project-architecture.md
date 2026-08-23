@@ -1,48 +1,37 @@
 # Project Architecture
 
-## Runtime Layers
+## Current Build Scope
 
-The prototype mirrors the supplied high-level architecture:
+The active prototype is being rebuilt one page at a time. The current implemented module is:
 
-- Presentation layer: React dashboard, assessment forms, learning roadmap, charts, and review panels
-- Application layer: Express routes and Socket.io event processing
-- AI and agent layer: local state-machine functions representing Assessment, Reasoning, LearnBot, Interviewer, and Fallback agents
-- Data layer: in-memory session context with typed profile, skill, roadmap, notebook, mock, interview, and violation records
-- External services: represented as placeholders for auth providers, AI model providers, speech-to-text, notifications, storage, and proctoring services
+- Page 1: Login / Sign Up
 
-## Event Contract
+The next approved module will be:
 
-The backend emits `STATE:SYNC` after meaningful state transitions. The client subscribes once through Zustand and maps the payload into individual state slices.
+- Page 2: Profile Setup / Basic Details
 
-Inbound events:
+## Current Runtime
 
-- `EVENT:SESSION_JOIN`
-- `EVENT:PROCTOR_ALERT`
-- `EVENT:ASSESSMENT_SUBMIT`
-- `EVENT:LEARNBOT_NODE_COMPLETE`
-- `EVENT:MOCK_INTERVIEW_SUBMIT`
-- `EVENT:TRIGGER_FALLBACK`
-- `EVENT:RESET_SESSION`
+- Vite serves the React application.
+- React local state handles the Page 1 flow.
+- Authentication is mocked locally.
+- Provider login buttons simulate identity handoff.
+- No backend, database, AI provider, or realtime event layer is active yet.
 
-REST endpoint:
+## Planned Module Order
 
-- `POST /api/session/init`: creates or replaces the local prototype session context
+1. Login / Sign Up
+2. Profile Setup / Basic Details
+3. Domain Selection
+4. Skill Selection
+5. Chatbot Assessment
+6. MCQ Assessment
+7. Gap Detection and Skill Scoring
+8. Learning Roadmap
+9. LearnBot Sessions
+10. Mock and Interview
+11. Performance Review
+12. Final Review and Certification
+13. Fallback Remediation Loop
 
-## Prototype State Machine
-
-1. Session initializes into the Assessment agent.
-2. Assessment events collect descriptive and MCQ responses while proctor logs are captured.
-3. Assessment submission moves the session to Reasoning.
-4. Reasoning computes claimed vs measured deltas and produces a 10-minute learning roadmap.
-5. LearnBot unlocks roadmap nodes and appends notebook records as nodes are completed.
-6. Mock/interview submission calculates aggregate readiness.
-7. If readiness fails, fallback remediation marks weak nodes as remediation and blocks certification.
-
-## Implementation Boundaries
-
-- No real login provider is connected.
-- No persisted database is used.
-- No AI provider is called.
-- Proctoring is simulated with browser visibility and clipboard events.
-- Speech-to-text is represented by typed assessment answers.
-- Object storage outputs are represented by notebook entries in the session context.
+Each module should be implemented, reviewed, and approved before moving to the next.

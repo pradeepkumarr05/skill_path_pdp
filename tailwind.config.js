@@ -4,25 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        agent: {
-          bg: '#0f172a',
-          canvas: '#f5f7fb',
-          surface: '#ffffff',
-          panel: '#eef5f6',
-          border: '#cbd5e1',
-          ink: '#172033',
-          muted: '#64748b',
-          accent: '#4f46e5',
-          assessment: '#2563eb',
-          reasoning: '#7c3aed',
-          learnbot: '#0f766e',
-          fallback: '#e11d48',
-          success: '#059669',
-          warning: '#d97706'
+        skillpath: {
+          ink: '#182522',
+          pine: '#102A27',
+          jade: '#2B8073',
+          copper: '#C87941',
+          saffron: '#C6A34A',
+          mist: '#F4F7F5',
+          paper: '#FFFFFF',
+          line: '#D7E0DB',
+          muted: '#66756F',
+          danger: '#B94A48',
+          focus: '#1D6F64'
         }
       },
       boxShadow: {
-        panel: '0 12px 30px rgba(15, 23, 42, 0.08)'
+        panel: '0 18px 48px rgba(16, 42, 39, 0.12)',
+        soft: '0 8px 22px rgba(24, 37, 34, 0.08)'
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],

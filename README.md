@@ -1,14 +1,13 @@
 # SkillPath Prototype
 
-SkillPath is a local full-stack prototype for an end-to-end skill readiness platform. It follows the supplied PDF workflow and `codex-prototype-blueprint.md` to model authentication entry, profile gathering, proctored assessment, AI reasoning, 10-minute learning roadmap sessions, mock interviews, performance review, certification readiness, and fallback remediation.
+SkillPath is a page-by-page prototype for an end-to-end skill readiness platform. The build now progresses one module at a time, starting with Login / Sign Up and moving forward only after review and approval.
 
 ## Tech Stack
 
-- Frontend: Vite, React, TypeScript, Tailwind CSS, Framer Motion, lucide-react, Recharts
-- State: Zustand with Socket.io client synchronization
-- Backend: Express, Socket.io, TypeScript, in-memory prototype session store
-- Runtime: Node.js with `tsx` for local backend development
-- Prototype data: static skill, roadmap, mock, and remediation data in `src/data`
+- Frontend: Vite, React, TypeScript, Tailwind CSS, Framer Motion, lucide-react
+- State: local React state for the current page-level prototype
+- Backend: not introduced yet
+- Runtime: Node.js and Vite
 
 ## Source Guidelines Used
 
@@ -26,14 +25,12 @@ npm run build
 The local development command starts:
 
 - Client: `http://localhost:5173`
-- Agent backend: `http://localhost:3001`
 
 ## Prototype Scope
 
-This is not a production implementation. Authentication, storage, AI model calls, proctoring, speech-to-text, object storage, notifications, and external provider integrations are represented as local prototype flows and typed placeholders. The goal is to make the complete product flow inspectable and interactive before production infrastructure is selected.
+This is not a production implementation. Authentication is mocked locally on Page 1. Future modules will be added as separate approved pages.
 
 ## Documentation
 
-- [Project architecture](docs/project-architecture.md)
-- [UI theme and layout consistency](docs/ui-theme-layout.md)
+- [UI consistency guide](docs/ui-consistency.md)
 - [Verification notes](docs/verification.md)
