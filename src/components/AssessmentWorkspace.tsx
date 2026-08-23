@@ -139,27 +139,31 @@ export function AssessmentWorkspace({ userId }: AssessmentWorkspaceProps) {
 
           <div className="grid gap-3">
             {assessmentQuestions
-              .filter((question) => question.id.startsWith('mcq'))
-              .map((question) => (
-                <div key={question.id} className="rounded-md border border-agent-border p-3">
-                  <p className="mb-3 text-sm font-semibold text-agent-ink">{question.prompt}</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {question.options.map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-sm text-agent-muted">
-                        <input
-                          className="h-4 w-4 accent-agent-assessment"
-                          type="radio"
-                          name={question.id}
-                          value={option}
-                          checked={mcqAnswers[question.id] === option}
-                          onChange={() => setMcqAnswers((current) => ({ ...current, [question.id]: option }))}
-                        />
-                        {option}
-                      </label>
-                    ))}
+              .filter((question) => question.id.startsWith('mcq') && 'options' in question)
+              .map((question) => {
+                const options = ((question as { options?: string[] }).options ?? []) as string[];
+
+                return (
+                  <div key={question.id} className="rounded-md border border-agent-border p-3">
+                    <p className="mb-3 text-sm font-semibold text-agent-ink">{question.prompt}</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {options.map((option) => (
+                        <label key={option} className="flex items-center gap-2 text-sm text-agent-muted">
+                          <input
+                            className="h-4 w-4 accent-agent-assessment"
+                            type="radio"
+                            name={question.id}
+                            value={option}
+                            checked={mcqAnswers[question.id] === option}
+                            onChange={() => setMcqAnswers((current) => ({ ...current, [question.id]: option }))}
+                          />
+                          {option}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       </div>
