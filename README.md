@@ -31,3 +31,9 @@ The local development command starts:
 ## Prototype Scope
 
 This is not a production implementation. Authentication, storage, AI model calls, proctoring, speech-to-text, object storage, notifications, and external provider integrations are represented as local prototype flows and typed placeholders. The goal is to make the complete product flow inspectable and interactive before production infrastructure is selected.
+
+## Documentation
+
+- [Project architecture](docs/project-architecture.md)
+- [UI theme and layout consistency](docs/ui-theme-layout.md)
+- [Verification notes](docs/verification.md)
