@@ -86,7 +86,7 @@ const rolesByDomain: Record<Domain, string[]> = {
 };
 
 const skillsByDomain: Record<Domain, string[]> = {
-  'Full Stack Engineering': ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'REST APIs', 'PostgreSQL', 'MongoDB', 'Git'],
+  'Full Stack Engineering': ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'REST APIs', 'Data Structures and Algorithms', 'PostgreSQL', 'MongoDB', 'Git'],
   'Data Science and AI': ['Python', 'SQL', 'Pandas', 'NumPy', 'Data Visualization', 'Machine Learning Basics', 'Statistics', 'Prompting', 'Model Evaluation'],
   'DevOps and Cloud': ['Linux', 'Docker', 'AWS Basics', 'CI/CD', 'GitHub Actions', 'Networking Basics', 'Shell Scripting', 'Monitoring Basics'],
   Cybersecurity: ['Linux', 'Network Security', 'OWASP Basics', 'Threat Modeling', 'SIEM Basics', 'Python Scripting', 'Incident Response Basics'],

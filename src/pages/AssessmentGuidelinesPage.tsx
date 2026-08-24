@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  ArrowsOut,
   ArrowLeft,
   ArrowRight,
   Camera,
   CheckCircle,
+  ClipboardText,
   Clock,
   Desktop,
   LockKey,
@@ -16,24 +18,45 @@ import {
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
 import type { ProfileSetupResult } from './ProfileSetupPage';
+import type { AssessmentAccessGrant } from '../types/assessment';
 
 interface AssessmentGuidelinesPageProps {
   profile: ProfileSetupResult;
   onBack: () => void;
+  onStartChatbot: (access: AssessmentAccessGrant) => void;
+  onSkipChatbot: (access: AssessmentAccessGrant) => void;
 }
 
 const guidelineItems = [
   {
     id: 'permissions',
-    title: 'Allow camera and microphone access',
-    detail: 'The assessment uses live video and audio monitoring for identity and environment checks.',
+    title: 'Allow camera and microphone',
+    detail: 'Camera and microphone access are required before the chatbot room opens.',
     icon: Camera,
+  },
+  {
+    id: 'screen',
+    title: 'Share your assessment screen',
+    detail: 'Screen sharing is required so the proctor can detect unsupported windows and overlays.',
+    icon: Desktop,
   },
   {
     id: 'fullscreen',
     title: 'Stay in full-screen mode',
-    detail: 'Tab switching, app switching, notification overlays, and full-screen exits are logged.',
-    icon: Desktop,
+    detail: 'The app asks for full-screen access. Exiting full-screen creates a proctor warning.',
+    icon: ArrowsOut,
+  },
+  {
+    id: 'switching',
+    title: 'Do not switch tabs or windows',
+    detail: 'Tab hiding, app switching, and focus loss are detected during the chatbot assessment.',
+    icon: WarningCircle,
+  },
+  {
+    id: 'clipboard',
+    title: 'Copy, cut, paste, and right-click are blocked',
+    detail: 'Clipboard and context-menu attempts are prevented and added to the proctor log.',
+    icon: ClipboardText,
   },
   {
     id: 'environment',
@@ -56,21 +79,77 @@ const guidelineItems = [
   {
     id: 'recording',
     title: 'Understand that activity is recorded',
-    detail: 'Screen, audio, proctoring flags, responses, and timestamps are stored for evaluation.',
+    detail: 'Screen access, media status, proctoring flags, answers, scores, and timestamps are stored for evaluation.',
     icon: LockKey,
   },
 ];
 
-export function AssessmentGuidelinesPage({ profile, onBack }: AssessmentGuidelinesPageProps) {
+export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSkipChatbot }: AssessmentGuidelinesPageProps) {
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
-  const [ready, setReady] = useState(false);
+  const [requestingAccess, setRequestingAccess] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   const acceptedCount = useMemo(() => Object.values(accepted).filter(Boolean).length, [accepted]);
   const allAccepted = acceptedCount === guidelineItems.length;
+  const shouldSkipChatbot = profile.claimedSkills.length === 0;
   const claimedSkills = profile.claimedSkills.length > 0 ? profile.claimedSkills : ['No existing skills claimed'];
 
   const toggleAccepted = (id: string) => {
     setAccepted((current) => ({ ...current, [id]: !current[id] }));
+  };
+
+  const stopStream = (stream: MediaStream | null) => {
+    stream?.getTracks().forEach((track) => track.stop());
+  };
+
+  const requestAssessmentAccess = async () => {
+    setRequestingAccess(true);
+    setAccessError(null);
+
+    let cameraStream: MediaStream | null = null;
+    let screenStream: MediaStream | null = null;
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error('This browser does not expose the required camera, microphone, and screen-share APIs.');
+      }
+
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+
+      const hasCamera = cameraStream.getVideoTracks().some((track) => track.readyState === 'live');
+      const hasMicrophone = cameraStream.getAudioTracks().some((track) => track.readyState === 'live');
+      const hasScreen = screenStream.getVideoTracks().some((track) => track.readyState === 'live');
+
+      if (!hasCamera || !hasMicrophone || !hasScreen || !document.fullscreenElement) {
+        throw new Error('Camera, microphone, screen share, and full-screen access are all required.');
+      }
+
+      const accessGrant = {
+        cameraGranted: hasCamera,
+        microphoneGranted: hasMicrophone,
+        screenGranted: hasScreen,
+        fullscreenGranted: true,
+        cameraStream,
+        screenStream,
+      };
+
+      if (shouldSkipChatbot) {
+        onSkipChatbot(accessGrant);
+      } else {
+        onStartChatbot(accessGrant);
+      }
+    } catch (error) {
+      stopStream(cameraStream);
+      stopStream(screenStream);
+      setAccessError(error instanceof Error ? error.message : 'Required assessment access was not granted.');
+    } finally {
+      setRequestingAccess(false);
+    }
   };
 
   return (
@@ -99,9 +178,9 @@ export function AssessmentGuidelinesPage({ profile, onBack }: AssessmentGuidelin
           <section className="min-w-0">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Chatbot Assessment Guidelines</h1>
+                <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Agentic Assessment Guidelines</h1>
                 <p className="mt-3 max-w-4xl text-base font-medium leading-7 text-skillpath-cream/70">
-                  The assessment is a real-time proctored conversation. Questions are generated from your selected domain, interested roles, and claimed skills.
+                  The next section is a Gemini-backed assessment flow. Claimed skills enter a proctored chatbot interview first; candidates without claimed skills continue directly to the Full Stack skill assessment.
                 </p>
               </div>
               <button
@@ -117,9 +196,9 @@ export function AssessmentGuidelinesPage({ profile, onBack }: AssessmentGuidelin
             <div className="grid gap-5 xl:grid-cols-2">
               <section className="rounded-lg border border-white/10 bg-skillpath-night shadow-panel xl:col-span-2">
                 <div className="grid gap-4 border-b border-white/10 p-4 sm:grid-cols-3 sm:p-5">
-                  <Metric icon={<Clock className="h-6 w-6" weight="bold" />} label="Duration" value="5 minutes" />
-                  <Metric icon={<ShieldCheck className="h-6 w-6" weight="bold" />} label="Mode" value="Proctored" />
-                  <Metric icon={<CheckCircle className="h-6 w-6" weight="bold" />} label="Format" value="AI chat" />
+                  <Metric icon={<Clock className="h-6 w-6" weight="bold" />} label="Answer timer" value="45 seconds" />
+                  <Metric icon={<ShieldCheck className="h-6 w-6" weight="bold" />} label="Mode" value={shouldSkipChatbot ? 'Skill test' : 'Proctored chat'} />
+                  <Metric icon={<CheckCircle className="h-6 w-6" weight="bold" />} label="Agent" value="Gemini" />
                 </div>
                 <div className="p-4 sm:p-5">
                   <h2 className="text-xl font-black text-skillpath-cream">Claimed skills to be assessed</h2>
@@ -130,6 +209,11 @@ export function AssessmentGuidelinesPage({ profile, onBack }: AssessmentGuidelin
                       </span>
                     ))}
                   </div>
+                  {shouldSkipChatbot ? (
+                    <p className="mt-4 rounded-md border border-skillpath-citron/50 bg-white/8 p-3 text-sm font-bold leading-6 text-skillpath-cream">
+                      No claimed skills were submitted. The chatbot interview is skipped by policy, and the next step is the Full Stack skill assessment.
+                    </p>
+                  ) : null}
                 </div>
               </section>
 
@@ -177,19 +261,20 @@ export function AssessmentGuidelinesPage({ profile, onBack }: AssessmentGuidelin
                 </div>
               ) : null}
 
-              {ready ? (
-                <div className="mt-5 rounded-md bg-skillpath-night p-4 text-sm font-bold leading-6 text-skillpath-cream">
-                  You are cleared to enter the chatbot assessment room.
+              {accessError ? (
+                <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
+                  <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
+                  {accessError}
                 </div>
               ) : null}
 
               <button
                 className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-skillpath-night px-4 text-base font-black text-skillpath-cream transition hover:bg-skillpath-forest disabled:cursor-not-allowed disabled:bg-skillpath-muted"
                 type="button"
-                disabled={!allAccepted}
-                onClick={() => setReady(true)}
+                disabled={!allAccepted || requestingAccess}
+                onClick={requestAssessmentAccess}
               >
-                Start assessment
+                {requestingAccess ? 'Requesting access' : shouldSkipChatbot ? 'Continue to skill assessment' : 'Request access and start'}
                 <ArrowRight className="h-5 w-5" weight="bold" aria-hidden="true" />
               </button>
             </section>
