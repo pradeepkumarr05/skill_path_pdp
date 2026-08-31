@@ -257,16 +257,21 @@ CREATE INDEX IF NOT EXISTS password_reset_otps_user_id_idx ON password_reset_otp
 
 `;
 
-async function migrate() {
+export async function runMigrations() {
   console.log('[migrate] Running SkillPath schema migration...');
   try {
     await query(DDL);
     console.log('[migrate] ✓ All tables created / already exist.');
-    process.exit(0);
+    return true;
   } catch (err) {
     console.error('[migrate] ✗ Migration failed:', err.message);
-    process.exit(1);
+    return false;
   }
 }
 
-migrate();
+// Auto-run if executed as script
+if (process.argv[1] && process.argv[1].endsWith('migrate.mjs')) {
+  runMigrations().then((ok) => {
+    process.exit(ok ? 0 : 1);
+  });
+}

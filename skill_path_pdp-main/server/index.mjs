@@ -14,6 +14,12 @@ import {
 } from './agentRuntimeDb.mjs';
 import { geminiModel, isGeminiConfigured } from './geminiClient.mjs';
 import { authRouter, requireAuth } from './auth/authRoutes.mjs';
+import { runMigrations } from './migrate.mjs';
+
+// Auto-run schema migration on server startup
+runMigrations().catch((err) => {
+  console.warn('[migrate] Startup migration notice:', err.message);
+});
 
 const PORT = Number(process.env.API_PORT || 8787);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';

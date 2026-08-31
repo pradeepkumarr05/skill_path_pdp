@@ -24,6 +24,7 @@ import {
   publicSkillAssessmentItems,
 } from './deterministicSkillAssessment.mjs';
 import { generateGeminiJson, geminiModel, isGeminiConfigured } from './geminiClient.mjs';
+import * as inMem from './agentRuntime.mjs';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const ANSWER_SECONDS = 45;
@@ -366,9 +367,16 @@ Rules:
 `.trim();
 }
 
-// ── Chatbot Assessment — startAgenticSession ──────────────────────────────
-
 export async function startAgenticSession(profileInput, candidateId) {
+  try {
+    return await _dbStartAgenticSession(profileInput, candidateId);
+  } catch (err) {
+    console.warn('[agentRuntimeDb] DB fallback in startAgenticSession:', err.message);
+    return await inMem.startAgenticSession(profileInput);
+  }
+}
+
+async function _dbStartAgenticSession(profileInput, candidateId) {
   const profile = sanitizeProfile(profileInput);
 
   // If no candidateId provided, upsert by email
@@ -995,11 +1003,24 @@ async function loadPublicSkillAssessment(assessmentId) {
 }
 
 export async function createSkillAssessment(profileInput, candidateId) {
+  try {
+    return await _dbCreateSkillAssessment(profileInput, candidateId);
+  } catch (err) {
+    console.warn('[agentRuntimeDb] DB fallback in createSkillAssessment:', err.message);
+    return await inMem.createSkillAssessment(profileInput);
+  }
+}
+
+async function _dbCreateSkillAssessment(profileInput, candidateId) {
   // Upsert candidate if needed
   let resolvedCandidateId = candidateId;
   if (!resolvedCandidateId) {
-    const candidate = await upsertCandidate(profileInput);
-    resolvedCandidateId = candidate.id;
+    try {
+      const candidate = await upsertCandidate(profileInput);
+      resolvedCandidateId = candidate.id;
+    } catch {
+      // ignore
+    }
   }
 
   const profile = sanitizeSkillProfile(profileInput);
@@ -1025,6 +1046,15 @@ export async function createSkillAssessment(profileInput, candidateId) {
 }
 
 export async function recordSkillAssessmentProctorEvent(assessmentId, payload, candidateId) {
+  try {
+    return await _dbRecordSkillAssessmentProctorEvent(assessmentId, payload, candidateId);
+  } catch (err) {
+    console.warn('[agentRuntimeDb] DB fallback in recordSkillAssessmentProctorEvent:', err.message);
+    return inMem.recordSkillAssessmentProctorEvent(assessmentId, payload);
+  }
+}
+
+async function _dbRecordSkillAssessmentProctorEvent(assessmentId, payload, candidateId) {
   const { rows } = await query(`SELECT * FROM skill_assessments WHERE id = $1`, [assessmentId]);
 
   if (!rows.length) {
@@ -1076,6 +1106,15 @@ export async function recordSkillAssessmentProctorEvent(assessmentId, payload, c
 }
 
 export async function submitSkillAssessment(assessmentId, answersInput, timedOut = false, candidateId) {
+  try {
+    return await _dbSubmitSkillAssessment(assessmentId, answersInput, timedOut, candidateId);
+  } catch (err) {
+    console.warn('[agentRuntimeDb] DB fallback in submitSkillAssessment:', err.message);
+    return inMem.submitSkillAssessment(assessmentId, answersInput, timedOut);
+  }
+}
+
+async function _dbSubmitSkillAssessment(assessmentId, answersInput, timedOut = false, candidateId) {
   const { rows } = await query(`SELECT * FROM skill_assessments WHERE id = $1`, [assessmentId]);
 
   if (!rows.length) {
