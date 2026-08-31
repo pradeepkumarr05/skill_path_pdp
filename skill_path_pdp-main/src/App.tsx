@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AssessmentGuidelinesPage } from './pages/AssessmentGuidelinesPage';
 import { LiveChatbotAssessmentPage } from './pages/LiveChatbotAssessmentPage';
 import { LoginPage, type LoginMethod } from './pages/LoginPage';
 import { ProfileSetupPage, type ProfileSetupResult } from './pages/ProfileSetupPage';
 import { LearningRoadmapPage } from './pages/LearningRoadmapPage';
 import { SkillAssessmentPage } from './pages/SkillAssessmentPage';
+import { getCurrentUser, type AuthUser } from './api/authApi';
+import { login as loginCandidate } from './api/skillpathApi';
 import type { AgenticSession, AssessmentAccessGrant, SkillAssessmentResult } from './types/assessment';
-import { login } from './api/skillpathApi';
 
 type AppStep = 'login' | 'profile' | 'assessment-guidelines' | 'chatbot-assessment' | 'skill-assessment' | 'learning-roadmap';
+
+const GITHUB_ERROR_MESSAGES: Record<string, string> = {
+  denied: 'GitHub sign-in was cancelled.',
+  invalid_state: 'That GitHub sign-in link expired. Please try again.',
+  email_unverified: 'Your GitHub account needs a verified email address to sign in here.',
+  not_configured: 'GitHub sign-in is not available right now.',
+  failed: 'Unable to sign in with GitHub right now. Please try again.',
+};
 
 export default function App() {
   const [step, setStep] = useState<AppStep>('login');
@@ -17,9 +26,33 @@ export default function App() {
   const [assessmentAccess, setAssessmentAccess] = useState<AssessmentAccessGrant | null>(null);
   const [chatSession, setChatSession] = useState<AgenticSession | null>(null);
   const [skillResult, setSkillResult] = useState<SkillAssessmentResult | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleLoginSuccess = (method: LoginMethod) => {
+  // GitHub sign-in is a full-page redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthResult = params.get('oauth');
+    if (!oauthResult) return;
+
+    if (oauthResult === 'github_success') {
+      getCurrentUser().then((result) => {
+        if (result?.user) {
+          setLastLoginMethod('github');
+          setStep('profile');
+        } else {
+          setLoginError('Unable to sign in with GitHub right now. Please try again.');
+        }
+      });
+    } else if (oauthResult === 'github_error') {
+      const reason = params.get('reason') || 'failed';
+      setLoginError(GITHUB_ERROR_MESSAGES[reason] || GITHUB_ERROR_MESSAGES.failed);
+    }
+
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
+  const handleLoginSuccess = (method: LoginMethod, _user?: AuthUser) => {
     setLastLoginMethod(method);
     setStep('profile');
   };
@@ -31,15 +64,10 @@ export default function App() {
     setSkillResult(null);
     setAuthError(null);
 
-    // Register / log in the candidate to get a JWT for subsequent API calls.
-    // This is a fire-and-forget upsert — if the server is unreachable we still
-    // let the user proceed (the API calls themselves will fail gracefully).
     try {
-      await login(nextProfile);
+      await loginCandidate(nextProfile);
     } catch (err) {
-      console.warn('[auth] Login call failed — API may be offline:', err instanceof Error ? err.message : err);
-      // Don't block the user flow; show a banner if needed
-      setAuthError(err instanceof Error ? err.message : 'Unable to authenticate. Check that the API server is running.');
+      console.warn('[auth] Candidate registration warning:', err instanceof Error ? err.message : err);
     }
 
     setStep('assessment-guidelines');
@@ -82,7 +110,7 @@ export default function App() {
       ) : null}
 
       {step === 'login' ? (
-        <LoginPage onAuthenticated={handleLoginSuccess} />
+        <LoginPage onAuthenticated={handleLoginSuccess} initialError={loginError} />
       ) : null}
       {step === 'profile' ? (
         <ProfileSetupPage lastLoginMethod={lastLoginMethod} onBack={() => setStep('login')} onComplete={(p) => void handleProfileComplete(p)} />
@@ -102,3 +130,4 @@ export default function App() {
     </>
   );
 }
+

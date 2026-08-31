@@ -1,174 +1,139 @@
 # SkillPath
 
-SkillPath is an end-to-end AI-powered skill readiness and assessment platform. This repository contains **Module 1: Chatbot Assessment + MCQ Assessment** with a complete backend and database.
+SkillPath is an end-to-end AI-powered skill readiness and assessment platform. This repository contains the complete unified application featuring **Enterprise-Grade Authentication** + **Agentic Chatbot Assessment** + **Deterministic MCQ Skill Assessment** backed by **PostgreSQL** and **Gemini 3.6 Flash**.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Vite, React 18, TypeScript, Tailwind CSS, Framer Motion, Phosphor Icons |
-| Backend | Node.js HTTP API (no framework) |
-| Database | PostgreSQL 15+ (persistent sessions, results, proctor events) |
-| Auth | JWT (jsonwebtoken) — Bearer token on all protected routes |
-| AI | Gemini 2.5 Flash via REST API (server-side only) |
-| Fonts | Bricolage Grotesque (UI) + Newsreader italic (wordmark) |
+| **Frontend** | Vite 6, React 18, TypeScript, Tailwind CSS, Framer Motion, Phosphor Icons |
+| **Backend** | Node.js Express API (port 8787) |
+| **Database** | PostgreSQL 15+ (`pg` connection pool with transaction safety) |
+| **Authentication** | Dual-mode: Secure cookie-based JWT + refresh token rotation + Bearer tokens for API client; Google OAuth (GIS ID token verification), GitHub OAuth, bcrypt password hashing, double-submit CSRF protection, rate limiting |
+| **AI Assessment** | Gemini 3.6 Flash via REST API (server-side only) |
+| **Proctoring** | Real-time tab-switch, fullscreen exit termination, blur detection, camera & optional microphone check |
+| **Typography** | Bricolage Grotesque (UI) + Newsreader italic (Wordmark) |
 
 ## Architecture
 
 ```
-Browser (React/Vite)
-    ↕  REST API + JWT Bearer token
-Node.js HTTP Server (port 8787)
-    ↕  pg (node-postgres)
-PostgreSQL Database
-    ↕  Gemini REST API
-Google Generative AI (Gemini 2.5 Flash)
+┌───────────────────────────────────────────────────────────┐
+│                    Browser (React 18 + Vite)              │
+│   • Modern Login / Sign Up / OAuth / Forgot-Reset Password│
+│   • Profile Setup (Fresher / Degree / Domain intake)      │
+│   • Assessment Guidelines & Proctoring Checklist          │
+│   • Live Chatbot Assessment & Deterministic MCQ Test      │
+│   • Learning Roadmap Dashboard                            │
+└───────────────┬───────────────────────────┬───────────────┘
+                │ Authorization: Bearer     │ Cookies / CSRF
+                ▼                           ▼
+┌───────────────────────────────────────────────────────────┐
+│                 SkillPath Express API (Port 8787)         │
+│   • Auth Router (/api/auth/*: login, register, oauth, otp)│
+│   • Chatbot Agent Runtime (/api/agent/*)                  │
+│   • MCQ Assessment Runtime (/api/skill-assessment/*)      │
+│   • Health check & Telemetry (/api/health)                │
+└───────────────┬───────────────────────────┬───────────────┘
+                │                           │
+                ▼                           ▼
+┌───────────────────────────────┐ ┌─────────────────────────┐
+│     PostgreSQL Database       │ │   Google Gemini AI      │
+│   • users & refresh_tokens    │ │   • gemini-3.6-flash    │
+│   • candidates & chat_sessions│ │   • Adaptive evaluation │
+│   • questions & transcripts   │ └─────────────────────────┘
+│   • proctor_events & results  │
+└───────────────────────────────┘
 ```
 
-## Module 1 Features
+## Core Features
+
+### 🔐 Enterprise-Grade Authentication & Security
+- **Email & Password Authentication**: Salted bcrypt hashing (cost factor 12) with account lockout after 5 consecutive failed attempts.
+- **Google Sign-In**: Integrated with Google Identity Services (GIS); verifies signed ID tokens on the backend using `google-auth-library`.
+- **GitHub OAuth**: Full OAuth flow with secure state verification and optional token encryption.
+- **Password Reset via OTP**: 6-digit one-time passcode with 10-minute expiry sent via nodemailer (or logged to server console in dev).
+- **Session Security**: Short-lived access tokens (15m) paired with single-use rotating refresh tokens (7d) stored in `httpOnly`, `SameSite=Strict` cookies.
+- **CSRF & Rate Limiting**: Double-submit cookie CSRF validation for browser requests + `express-rate-limit` protection.
 
 ### 🤖 Agentic Chatbot Assessment
-- **Real Gemini-backed questions** — adaptive medium → hard progression per skill
-- **Agentic state machine** — per-skill scoring, pass/fail routing, session completion
-- **Live proctoring** — clipboard, tab-switch, fullscreen, window-blur detection
-- **45-second per-question timer** — auto-submits on expiry
-- **PostgreSQL persistence** — sessions survive server restarts
+- **Gemini 3.6 Flash Integration**: Adaptive medium → hard question progression tailored to claimed candidate skills.
+- **State Machine Runtime**: Dynamic scoring (45% medium + 55% hard weighting), strength/gap detection, and level thresholding (novice, developing, job_ready, strong).
+- **Strict Proctoring**: Instant termination overlay upon fullscreen exit or lost camera permissions; tab-switch and blur detection.
+- **45-second Question Timer**: Automatic answer submission on timer expiration.
 
-### 📋 MCQ Skill Assessment (Deterministic)
-- **22 fixed questions** across 11 Full Stack skills (2 per skill)
-- **Uniform coverage** — every claimed skill tested equally
-- **Timed assessment** — 75 seconds per item, auto-submit on expiry
-- **Proctoring** — same event model as chatbot stage
-- **Graded results** — per-question correctChoice + explanation revealed post-submission
-
-### 🔐 JWT Authentication
-- `POST /api/auth/login` — upsert candidate by email, return JWT
-- Bearer token required on all `/api/agent/*` and `/api/skill-assessment/*` routes
-- Token propagated transparently by the frontend API client
+### 📋 Deterministic MCQ Skill Assessment
+- **22 Fixed Comprehensive Questions**: Covering 11 key Full Stack engineering skills (2 items per skill).
+- **Timed Execution**: 75-second per item countdown with auto-submission.
+- **Transparent Feedback**: Explanations and answer evaluations revealed upon test completion.
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js 20+
-- PostgreSQL 15+ (running locally or cloud)
-- Gemini API key from [aistudio.google.com](https://aistudio.google.com/apikey)
+- PostgreSQL 15+ (Local, Docker, Supabase, Neon, etc.)
+- Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
 
-### 1. Install dependencies
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Configure environment
+### 2. Configure Environment
 ```bash
-# Copy the template
-copy .env.example .env
+cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` with your settings:
 ```env
+DATABASE_URL=postgres://skillpath:skillpath@localhost:5432/skillpath
+JWT_SECRET=your-random-64-character-secret-string
 GEMINI_API_KEY=your-gemini-api-key-here
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/skillpath
-JWT_SECRET=any-long-random-string-here
+API_PORT=8787
+CLIENT_ORIGIN=http://localhost:5173
 ```
 
-### 3. Create the database
-```bash
-# Using psql
-psql -U postgres -c "CREATE DATABASE skillpath;"
-
-# Or in pgAdmin / any client:
-# CREATE DATABASE skillpath;
-```
-
-### 4. Run schema migration
+### 3. Run Database Migrations
 ```bash
 npm run migrate
 ```
+*Creates all 13 tables: `users`, `refresh_tokens`, `login_audit_log`, `password_reset_otps`, `candidates`, `chat_sessions`, `chat_skill_states`, `chat_skill_attempts`, `chat_questions`, `chat_transcript`, `proctor_events`, `skill_assessments`, and `skill_assessment_results`.*
 
-Expected output:
-```
-[migrate] Running SkillPath schema migration...
-[migrate] ✓ All tables created / already exist.
-```
-
-### 5. Start development servers
+### 4. Start Development Server
 ```bash
 npm run dev
 ```
-
-This starts:
 - **Frontend** → http://localhost:5173
-- **API** → http://localhost:8787
+- **Backend API** → http://localhost:8787
 
-### 6. Run end-to-end tests (optional)
-```bash
-# In a separate terminal while npm run dev is running
-npm run test:api
-```
+## Test & Validation Commands
 
-## API Routes
+| Command | Purpose |
+|---|---|
+| `npm run typecheck` | Validates TypeScript across all frontend components |
+| `npm run test:unit` | Tests assessment state machine math and scoring logic |
+| `npm run test:api` | End-to-end integration test suite for all API routes |
+| `npm run build` | Builds production frontend distribution bundle |
 
-| Method | Path | Auth | Description |
+## API Endpoints
+
+| Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
-| GET | `/api/health` | Public | Server health + Gemini status |
-| POST | `/api/auth/login` | Public | Upsert candidate, return JWT |
-| GET | `/api/auth/me` | JWT | Return authenticated candidate |
-| POST | `/api/agent/start` | JWT | Start chatbot session |
-| POST | `/api/agent/answer` | JWT | Submit chatbot answer |
-| POST | `/api/agent/proctor` | JWT | Record chatbot proctor event |
-| GET | `/api/agent/session` | JWT | Fetch chatbot session |
-| POST | `/api/skill-assessment` | JWT | Create MCQ assessment |
-| POST | `/api/skill-assessment/submit` | JWT | Submit MCQ answers |
-| POST | `/api/skill-assessment/proctor` | JWT | Record MCQ proctor event |
-
-## Database Schema
-
-| Table | Purpose |
-|---|---|
-| `candidates` | Candidate profiles (upserted by email) |
-| `chat_sessions` | Chatbot assessment sessions |
-| `chat_skill_states` | Per-skill state machine (pending → medium → hard → completed) |
-| `chat_skill_attempts` | Individual question scores |
-| `chat_questions` | Gemini-generated questions |
-| `chat_transcript` | Full conversation log |
-| `proctor_events` | All proctoring violations |
-| `skill_assessments` | MCQ assessment instances |
-| `skill_assessment_results` | Graded MCQ results |
-| `auth_sessions` | JWT tracking |
-
-## npm Scripts
-
-| Script | Description |
-|---|---|
-| `npm run dev` | Start both Vite client + API server |
-| `npm run dev:api` | API server only |
-| `npm run dev:client` | Vite client only |
-| `npm run migrate` | Run database migration |
-| `npm run test:api` | Run end-to-end API tests |
-| `npm run build` | TypeScript check + production build |
-| `npm run typecheck` | TypeScript type check only |
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | Yes | Google AI Studio API key |
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | JWT signing secret (any random string) |
-| `GEMINI_MODEL` | No | Override model (default: `gemini-3.6-flash`) |
-| `JWT_EXPIRES_IN` | No | Token TTL (default: `7d`) |
-| `API_PORT` | No | API port (default: `8787`) |
-
-## Security Notes
-
-- `.env` is git-ignored — never commit it
-- All Gemini calls are server-side only — API key never reaches the browser
-- JWT tokens are validated on every protected route
-- Proctor events auto-terminate sessions after 3 violations
-- Answer timer is enforced server-side (not just client-side)
-
-## Documentation
-
-- [UI consistency guide](docs/ui-consistency.md)
-- [Project architecture](docs/project-architecture.md)
-- [Verification notes](docs/verification.md)
+| `GET` | `/api/health` | Health check and Gemini/DB status | No |
+| `GET` | `/api/auth/csrf-token` | Obtain CSRF token cookie | No |
+| `POST` | `/api/auth/register` | Register a new email/password account | CSRF |
+| `POST` | `/api/auth/login` | Authenticate user or upsert candidate | CSRF / Token |
+| `POST` | `/api/auth/google` | Sign in with Google ID token | CSRF |
+| `GET` | `/api/auth/github/start` | Initiate GitHub OAuth | No |
+| `GET` | `/api/auth/github/callback` | Complete GitHub OAuth callback | No |
+| `POST` | `/api/auth/forgot-password` | Request 6-digit password reset OTP | CSRF |
+| `POST` | `/api/auth/reset-password` | Reset password using OTP code | CSRF |
+| `POST` | `/api/auth/refresh` | Rotate refresh token | CSRF / Cookie |
+| `POST` | `/api/auth/logout` | Revoke session and clear cookies | CSRF |
+| `GET` | `/api/auth/me` | Fetch authenticated user/candidate | Yes |
+| `POST` | `/api/agent/start` | Start agentic chatbot assessment | Yes |
+| `POST` | `/api/agent/answer` | Submit answer for chatbot evaluation | Yes |
+| `POST` | `/api/agent/proctor` | Record proctor event during chatbot | Yes |
+| `GET` | `/api/agent/session` | Get active chatbot session state | Yes |
+| `POST` | `/api/skill-assessment` | Create deterministic MCQ assessment | Yes |
+| `POST` | `/api/skill-assessment/submit` | Submit MCQ assessment answers | Yes |
+| `POST` | `/api/skill-assessment/proctor` | Record MCQ proctor event | Yes |

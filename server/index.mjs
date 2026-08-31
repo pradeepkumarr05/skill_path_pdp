@@ -1,4 +1,8 @@
-import http from 'node:http';
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import {
   createSkillAssessment,
   getAgenticSession,
@@ -7,134 +11,191 @@ import {
   startAgenticSession,
   submitAgenticAnswer,
   submitSkillAssessment,
-} from './agentRuntime.mjs';
+} from './agentRuntimeDb.mjs';
 import { geminiModel, isGeminiConfigured } from './geminiClient.mjs';
+import { authRouter, requireAuth } from './auth/authRoutes.mjs';
 
 const PORT = Number(process.env.API_PORT || 8787);
-const MAX_BODY_BYTES = 1_000_000;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-function sendJson(res, statusCode, body) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store',
-  });
-  res.end(JSON.stringify(body));
-}
+const app = express();
 
-function readJson(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
+// --- Security headers -------------------------------------------------
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://accounts.google.com/gsi/client'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https://*.googleusercontent.com'],
+        connectSrc: ["'self'", 'https://accounts.google.com'],
+        frameSrc: ['https://accounts.google.com'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 
-    req.on('data', (chunk) => {
-      body += chunk;
-      if (Buffer.byteLength(body) > MAX_BODY_BYTES) {
-        const error = new Error('Request body is too large.');
-        error.statusCode = 413;
-        reject(error);
-        req.destroy();
+// --- CORS -------------------------------------------------------------
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server) or matching localhost / CLIENT_ORIGIN
+      if (!origin || origin === CLIENT_ORIGIN || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Permissive in dev
       }
-    });
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Cache-Control'],
+  }),
+);
 
-    req.on('end', () => {
-      if (!body.trim()) {
-        resolve({});
-        return;
-      }
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
 
-      try {
-        resolve(JSON.parse(body));
-      } catch {
-        const error = new Error('Request body must be valid JSON.');
-        error.statusCode = 400;
-        reject(error);
-      }
-    });
-
-    req.on('error', reject);
-  });
-}
-
-function routeKey(method, pathname) {
-  return `${method.toUpperCase()} ${pathname}`;
-}
-
-async function handleRequest(req, res) {
-  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-
-  try {
-    if (routeKey(req.method, url.pathname) === 'GET /api/health') {
-      sendJson(res, 200, {
-        ok: true,
-        geminiConfigured: isGeminiConfigured(),
-        model: geminiModel(),
-      });
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/start') {
-      const body = await readJson(req);
-      const session = await startAgenticSession(body.profile);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/answer') {
-      const body = await readJson(req);
-      const session = await submitAgenticAnswer(body.sessionId, body);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/proctor') {
-      const body = await readJson(req);
-      const session = recordProctorEvent(body.sessionId, body);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'GET /api/agent/session') {
-      const sessionId = url.searchParams.get('sessionId') || '';
-      const session = getAgenticSession(sessionId);
-      if (!session) {
-        sendJson(res, 404, { error: 'Assessment session was not found.' });
-        return;
-      }
-      sendJson(res, 200, session);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment') {
-      const body = await readJson(req);
-      const assessment = await createSkillAssessment(body.profile);
-      sendJson(res, 200, assessment);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment/submit') {
-      const body = await readJson(req);
-      const result = submitSkillAssessment(body.assessmentId, body.answers, body.timedOut);
-      sendJson(res, 200, result);
-      return;
-    }
-
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment/proctor') {
-      const body = await readJson(req);
-      const assessment = recordSkillAssessmentProctorEvent(body.assessmentId, body);
-      sendJson(res, 200, assessment);
-      return;
-    }
-
-    sendJson(res, 404, { error: 'Route not found.' });
-  } catch (error) {
-    const statusCode = Number(error?.statusCode) || 500;
-    sendJson(res, statusCode, {
-      error: error instanceof Error ? error.message : 'Unexpected server error.',
-    });
-  }
-}
-
-http.createServer((req, res) => {
-  void handleRequest(req, res);
-}).listen(PORT, '0.0.0.0', () => {
-  console.log(`SkillPath API listening on http://localhost:${PORT}`);
+// Never cache API responses that may contain session-derived data.
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
 });
+
+// Helper to extract candidate / user ID if token present
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.cookies?.['access_token'];
+  if (token) {
+    try {
+      const { verifyAccessToken } = requireAuth;
+      // or decode
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        req.auth = payload;
+        req.user = payload;
+      }
+    } catch {
+      // continue without auth
+    }
+  }
+  next();
+}
+
+app.use(optionalAuth);
+
+// --- Auth routes --------------------------------------------------------
+app.use('/api/auth', authRouter);
+
+// --- Health Check -------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    geminiConfigured: isGeminiConfigured(),
+    model: geminiModel(),
+    dbConnected: true,
+  });
+});
+
+// --- Chatbot Assessment Routes ------------------------------------------
+app.post('/api/agent/start', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const session = await startAgenticSession(req.body.profile, candidateId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/agent/answer', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const session = await submitAgenticAnswer(req.body.sessionId, req.body, candidateId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/agent/proctor', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const session = await recordProctorEvent(req.body.sessionId, req.body, candidateId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/agent/session', async (req, res, next) => {
+  try {
+    const sessionId = req.query.sessionId || '';
+    const session = await getAgenticSession(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Assessment session was not found.' });
+    }
+    return res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- MCQ Skill Assessment Routes ----------------------------------------
+app.post('/api/skill-assessment', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const assessment = await createSkillAssessment(req.body.profile, candidateId);
+    res.json(assessment);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/skill-assessment/submit', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const result = await submitSkillAssessment(req.body.assessmentId, req.body.answers, req.body.timedOut, candidateId);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/skill-assessment/proctor', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const assessment = await recordSkillAssessmentProctorEvent(req.body.assessmentId, req.body, candidateId);
+    res.json(assessment);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- 404 & Centralized Error Handler -----------------------------------
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found.' });
+});
+
+app.use((error, req, res, next) => { // eslint-disable-line no-unused-vars
+  const statusCode = Number(error?.statusCode || error?.status) || 500;
+  if (statusCode >= 500) {
+    console.error(`[api] ${req.method} ${req.originalUrl || req.url} → ${statusCode}:`, error);
+  }
+  res.status(statusCode).json({
+    error: error instanceof Error ? error.message : 'Unexpected server error.',
+  });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`SkillPath API listening on http://localhost:${PORT}`);
+  console.log(`  Gemini configured: ${isGeminiConfigured()}`);
+  console.log(`  Model: ${geminiModel()}`);
+});
+

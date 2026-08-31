@@ -1,21 +1,8 @@
-/**
- * server/index.mjs  (v2 — DB + JWT)
- *
- * Replaces the original in-memory server with:
- *  - POST /api/auth/login        → upsert candidate, return JWT
- *  - GET  /api/auth/me           → validate JWT, return candidate profile
- *  - POST /api/agent/start       → JWT-gated, DB-backed chatbot session start
- *  - POST /api/agent/answer      → JWT-gated answer submission
- *  - POST /api/agent/proctor     → JWT-gated proctor event
- *  - GET  /api/agent/session     → JWT-gated session fetch
- *  - POST /api/skill-assessment  → JWT-gated MCQ assessment creation
- *  - POST /api/skill-assessment/submit  → JWT-gated MCQ submission
- *  - POST /api/skill-assessment/proctor → JWT-gated MCQ proctor event
- *  - GET  /api/health            → public health check
- */
-import http from 'node:http';
-import { requireAuth, signToken } from './auth.mjs';
-import { query } from './db.mjs';
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import {
   createSkillAssessment,
   getAgenticSession,
@@ -24,250 +11,191 @@ import {
   startAgenticSession,
   submitAgenticAnswer,
   submitSkillAssessment,
-  upsertCandidate,
 } from './agentRuntimeDb.mjs';
 import { geminiModel, isGeminiConfigured } from './geminiClient.mjs';
+import { authRouter, requireAuth } from './auth/authRoutes.mjs';
 
 const PORT = Number(process.env.API_PORT || 8787);
-const MAX_BODY_BYTES = 1_000_000;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-// ── CORS headers for local dev ────────────────────────────────────────────
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Max-Age': '86400',
-};
+const app = express();
 
-function sendJson(res, statusCode, body) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store',
-    ...CORS_HEADERS,
-  });
-  res.end(JSON.stringify(body));
-}
+// --- Security headers -------------------------------------------------
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://accounts.google.com/gsi/client'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https://*.googleusercontent.com'],
+        connectSrc: ["'self'", 'https://accounts.google.com'],
+        frameSrc: ['https://accounts.google.com'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 
-function readJson(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk;
-      if (Buffer.byteLength(body) > MAX_BODY_BYTES) {
-        const error = new Error('Request body is too large.');
-        error.statusCode = 413;
-        reject(error);
-        req.destroy();
+// --- CORS -------------------------------------------------------------
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server) or matching localhost / CLIENT_ORIGIN
+      if (!origin || origin === CLIENT_ORIGIN || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Permissive in dev
       }
-    });
-    req.on('end', () => {
-      if (!body.trim()) {
-        resolve({});
-        return;
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Cache-Control'],
+  }),
+);
+
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
+
+// Never cache API responses that may contain session-derived data.
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
+// Helper to extract candidate / user ID if token present
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.cookies?.['access_token'];
+  if (token) {
+    try {
+      const { verifyAccessToken } = requireAuth;
+      // or decode
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        req.auth = payload;
+        req.user = payload;
       }
-      try {
-        resolve(JSON.parse(body));
-      } catch {
-        const error = new Error('Request body must be valid JSON.');
-        error.statusCode = 400;
-        reject(error);
-      }
-    });
-    req.on('error', reject);
-  });
-}
-
-function routeKey(method, pathname) {
-  return `${method.toUpperCase()} ${pathname}`;
-}
-
-async function handleRequest(req, res) {
-  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-
-  // Handle preflight CORS
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS_HEADERS);
-    res.end();
-    return;
+    } catch {
+      // continue without auth
+    }
   }
+  next();
+}
 
+app.use(optionalAuth);
+
+// --- Auth routes --------------------------------------------------------
+app.use('/api/auth', authRouter);
+
+// --- Health Check -------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    geminiConfigured: isGeminiConfigured(),
+    model: geminiModel(),
+    dbConnected: true,
+  });
+});
+
+// --- Chatbot Assessment Routes ------------------------------------------
+app.post('/api/agent/start', async (req, res, next) => {
   try {
-    // ── Public routes ───────────────────────────────────────────────────────
-
-    if (routeKey(req.method, url.pathname) === 'GET /api/health') {
-      sendJson(res, 200, {
-        ok: true,
-        geminiConfigured: isGeminiConfigured(),
-        model: geminiModel(),
-        dbConnected: true,
-      });
-      return;
-    }
-
-    // POST /api/auth/login — upsert candidate by email + return JWT
-    if (routeKey(req.method, url.pathname) === 'POST /api/auth/login') {
-      const body = await readJson(req);
-      const email = String(body?.email || '').trim().toLowerCase();
-
-      if (!email || !email.includes('@')) {
-        sendJson(res, 400, { error: 'A valid email address is required.' });
-        return;
-      }
-
-      // Build full profile from body
-      const profileInput = {
-        name: body?.name || body?.profile?.name || 'Candidate',
-        email,
-        qualification: body?.qualification || body?.profile?.qualification || '',
-        domain: body?.domain || body?.profile?.domain || 'Full Stack Engineering',
-        interestedRoles: body?.interestedRoles || body?.profile?.interestedRoles || [],
-        claimedSkills: body?.claimedSkills || body?.profile?.claimedSkills || [],
-      };
-
-      const candidate = await upsertCandidate(profileInput);
-      const token = signToken(candidate.id);
-
-      sendJson(res, 200, {
-        token,
-        candidate: {
-          id: candidate.id,
-          name: candidate.name,
-          email: candidate.email,
-          qualification: candidate.qualification,
-          selectedDomain: candidate.selected_domain,
-          assessmentDomain: candidate.assessment_domain,
-          interestedRoles: candidate.interested_roles || [],
-          claimedSkills: candidate.claimed_skills || [],
-        },
-      });
-      return;
-    }
-
-    // ── Protected routes ────────────────────────────────────────────────────
-
-    // GET /api/auth/me — return authenticated candidate profile
-    if (routeKey(req.method, url.pathname) === 'GET /api/auth/me') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const { rows } = await query(`SELECT * FROM candidates WHERE id = $1`, [auth.sub]);
-      if (!rows.length) {
-        sendJson(res, 404, { error: 'Candidate not found.' });
-        return;
-      }
-
-      const c = rows[0];
-      sendJson(res, 200, {
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        qualification: c.qualification,
-        selectedDomain: c.selected_domain,
-        assessmentDomain: c.assessment_domain,
-        interestedRoles: c.interested_roles || [],
-        claimedSkills: c.claimed_skills || [],
-        createdAt: c.created_at,
-      });
-      return;
-    }
-
-    // POST /api/agent/start — start chatbot session
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/start') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const session = await startAgenticSession(body.profile, auth.sub);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    // POST /api/agent/answer — submit chatbot answer
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/answer') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const session = await submitAgenticAnswer(body.sessionId, body, auth.sub);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    // POST /api/agent/proctor — record chatbot proctor event
-    if (routeKey(req.method, url.pathname) === 'POST /api/agent/proctor') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const session = await recordProctorEvent(body.sessionId, body, auth.sub);
-      sendJson(res, 200, session);
-      return;
-    }
-
-    // GET /api/agent/session — fetch chatbot session
-    if (routeKey(req.method, url.pathname) === 'GET /api/agent/session') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const sessionId = url.searchParams.get('sessionId') || '';
-      const session = await getAgenticSession(sessionId);
-      if (!session) {
-        sendJson(res, 404, { error: 'Assessment session was not found.' });
-        return;
-      }
-      sendJson(res, 200, session);
-      return;
-    }
-
-    // POST /api/skill-assessment — create MCQ assessment
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const assessment = await createSkillAssessment(body.profile, auth.sub);
-      sendJson(res, 200, assessment);
-      return;
-    }
-
-    // POST /api/skill-assessment/submit — submit MCQ answers
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment/submit') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const result = await submitSkillAssessment(body.assessmentId, body.answers, body.timedOut, auth.sub);
-      sendJson(res, 200, result);
-      return;
-    }
-
-    // POST /api/skill-assessment/proctor — record MCQ proctor event
-    if (routeKey(req.method, url.pathname) === 'POST /api/skill-assessment/proctor') {
-      const auth = requireAuth(req, res, sendJson);
-      if (!auth) return;
-
-      const body = await readJson(req);
-      const assessment = await recordSkillAssessmentProctorEvent(body.assessmentId, body, auth.sub);
-      sendJson(res, 200, assessment);
-      return;
-    }
-
-    sendJson(res, 404, { error: 'Route not found.' });
+    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const session = await startAgenticSession(req.body.profile, candidateId);
+    res.json(session);
   } catch (error) {
-    const statusCode = Number(error?.statusCode) || 500;
-    console.error(`[api] ${req.method} ${url.pathname} → ${statusCode}:`, error.message);
-    sendJson(res, statusCode, {
-      error: error instanceof Error ? error.message : 'Unexpected server error.',
-    });
+    next(error);
   }
-}
+});
 
-http
-  .createServer((req, res) => {
-    void handleRequest(req, res);
-  })
-  .listen(PORT, '0.0.0.0', () => {
-    console.log(`SkillPath API v2 (DB + JWT) listening on http://localhost:${PORT}`);
-    console.log(`  Gemini configured: ${isGeminiConfigured()}`);
-    console.log(`  Model: ${geminiModel()}`);
+app.post('/api/agent/answer', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const session = await submitAgenticAnswer(req.body.sessionId, req.body, candidateId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/agent/proctor', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const session = await recordProctorEvent(req.body.sessionId, req.body, candidateId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/agent/session', async (req, res, next) => {
+  try {
+    const sessionId = req.query.sessionId || '';
+    const session = await getAgenticSession(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Assessment session was not found.' });
+    }
+    return res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- MCQ Skill Assessment Routes ----------------------------------------
+app.post('/api/skill-assessment', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const assessment = await createSkillAssessment(req.body.profile, candidateId);
+    res.json(assessment);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/skill-assessment/submit', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const result = await submitSkillAssessment(req.body.assessmentId, req.body.answers, req.body.timedOut, candidateId);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/skill-assessment/proctor', async (req, res, next) => {
+  try {
+    const candidateId = req.auth?.sub || req.user?.id;
+    const assessment = await recordSkillAssessmentProctorEvent(req.body.assessmentId, req.body, candidateId);
+    res.json(assessment);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- 404 & Centralized Error Handler -----------------------------------
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found.' });
+});
+
+app.use((error, req, res, next) => { // eslint-disable-line no-unused-vars
+  const statusCode = Number(error?.statusCode || error?.status) || 500;
+  if (statusCode >= 500) {
+    console.error(`[api] ${req.method} ${req.originalUrl || req.url} → ${statusCode}:`, error);
+  }
+  res.status(statusCode).json({
+    error: error instanceof Error ? error.message : 'Unexpected server error.',
   });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`SkillPath API listening on http://localhost:${PORT}`);
+  console.log(`  Gemini configured: ${isGeminiConfigured()}`);
+  console.log(`  Model: ${geminiModel()}`);
+});
+
