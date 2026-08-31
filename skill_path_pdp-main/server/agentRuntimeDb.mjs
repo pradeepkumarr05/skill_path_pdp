@@ -403,7 +403,8 @@ export async function startAgenticSession(profileInput, candidateId) {
     };
   }
 
-  return await withTransaction(async (client) => {
+  // ── Phase 1: DB writes (inside transaction) ──
+  const sessionSetup = await withTransaction(async (client) => {
     // Create session
     const { rows: sessionRows } = await client.query(
       `INSERT INTO chat_sessions
@@ -432,7 +433,7 @@ export async function startAgenticSession(profileInput, candidateId) {
       ],
     );
 
-    // Set first skill to medium and ask first question
+    // Set first skill to medium
     await client.query(
       `UPDATE chat_skill_states SET status = 'medium' WHERE session_id = $1 AND skill_index = 0`,
       [sessionId],
@@ -443,67 +444,56 @@ export async function startAgenticSession(profileInput, candidateId) {
       `SELECT * FROM chat_skill_states WHERE session_id = $1 AND skill_index = 0`,
       [sessionId],
     );
-    const firstSkill = firstSkillRows[0];
 
-    // Load session data needed for prompts
+    // Load candidate data for prompts
     const { rows: candidateRows } = await client.query(
       `SELECT * FROM candidates WHERE id = $1`,
       [resolvedCandidateId],
     );
     const candidateData = candidateRows[0];
-    const sessionData = {
-      ...sessionRows[0],
-      candidate_name: candidateData.name,
-      candidate_email: candidateData.email,
-      qualification: candidateData.qualification,
-      selected_domain: candidateData.selected_domain,
-      claimed_skills: candidateData.claimed_skills,
-      interested_roles: candidateData.interested_roles,
+
+    return {
+      sessionId,
+      firstSkill: firstSkillRows[0],
+      sessionData: {
+        ...sessionRows[0],
+        candidate_name: candidateData.name,
+        candidate_email: candidateData.email,
+        qualification: candidateData.qualification,
+        selected_domain: candidateData.selected_domain,
+        claimed_skills: candidateData.claimed_skills,
+        interested_roles: candidateData.interested_roles,
+      },
     };
-
-    // Generate first question via Gemini
-    const questionData = await generateQuestion(sessionData, firstSkill, 'medium', '');
-    const { rows: qRows } = await client.query(
-      `INSERT INTO chat_questions (session_id, skill, difficulty, text, intent, sequence, started_at, due_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id`,
-      [
-        sessionId,
-        firstSkill.skill,
-        'medium',
-        questionData.text,
-        questionData.intent,
-        1,
-        questionData.startedAt,
-        questionData.dueAt,
-      ],
-    );
-    const questionId = qRows[0].id;
-
-    // Update session with current question + sequence
-    await client.query(
-      `UPDATE chat_sessions SET current_question_id = $1, question_sequence = 1 WHERE id = $2`,
-      [questionId, sessionId],
-    );
-
-    // Add question to transcript
-    await client.query(
-      `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'agent', $2, $3)`,
-      [
-        sessionId,
-        questionData.text,
-        JSON.stringify({
-          type: 'question',
-          skill: firstSkill.skill,
-          difficulty: 'medium',
-          questionId,
-          intent: questionData.intent,
-        }),
-      ],
-    );
-
-    return loadPublicSession(sessionId);
   });
+
+  // ── Phase 2: Gemini call (outside transaction) ──
+  const { sessionId, firstSkill, sessionData } = sessionSetup;
+  const questionData = await generateQuestion(sessionData, firstSkill, 'medium', '');
+
+  // ── Phase 3: Persist question result (outside transaction — non-critical atomicity) ──
+  const { rows: qRows } = await query(
+    `INSERT INTO chat_questions (session_id, skill, difficulty, text, intent, sequence, started_at, due_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+    [sessionId, firstSkill.skill, 'medium', questionData.text, questionData.intent, 1, questionData.startedAt, questionData.dueAt],
+  );
+  const questionId = qRows[0].id;
+
+  await query(
+    `UPDATE chat_sessions SET current_question_id = $1, question_sequence = 1 WHERE id = $2`,
+    [questionId, sessionId],
+  );
+
+  await query(
+    `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'agent', $2, $3)`,
+    [
+      sessionId,
+      questionData.text,
+      JSON.stringify({ type: 'question', skill: firstSkill.skill, difficulty: 'medium', questionId, intent: questionData.intent }),
+    ],
+  );
+
+  return loadPublicSession(sessionId);
 }
 
 // ── Generate a question via Gemini ─────────────────────────────────────────

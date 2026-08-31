@@ -123,6 +123,10 @@ async function runTests() {
 
   // ── 5. Chatbot — start session (with claimed skills) ──────────────────
   section('5. Chatbot — start session with claimed skills');
+
+  // Check if Gemini is configured before attempting chatbot tests
+  const geminiAvailable = health.body.geminiConfigured === true;
+
   const profile = {
     name: 'Test Candidate',
     email: testEmail,
@@ -131,45 +135,46 @@ async function runTests() {
     interestedRoles: ['Full Stack Developer Trainee'],
     claimedSkills: ['React', 'Node.js'],
   };
-  const startRes = await post('/api/agent/start', { profile }, token);
-  assert('POST /api/agent/start returns 200', startRes.status === 200, startRes.body);
-  assert('response has sessionId', typeof startRes.body.sessionId === 'string', startRes.body);
-  assert('status is active', startRes.body.status === 'active', startRes.body);
-  assert('has currentQuestion', startRes.body.currentQuestion !== null, startRes.body);
-  assert('currentQuestion has text', typeof startRes.body.currentQuestion?.text === 'string', startRes.body.currentQuestion);
-  assert('currentQuestion has dueAt', typeof startRes.body.currentQuestion?.dueAt === 'string', startRes.body.currentQuestion);
-  assert('transcript has entries', Array.isArray(startRes.body.transcript) && startRes.body.transcript.length > 0, startRes.body.transcript);
-  assert('skillStates populated', Array.isArray(startRes.body.skillStates) && startRes.body.skillStates.length > 0, startRes.body.skillStates);
 
-  const sessionId = startRes.body.sessionId;
-  const questionId = startRes.body.currentQuestion?.id;
+  let sessionId = null;
+  let questionId = null;
 
-  // ── 6. Chatbot — submit answer ────────────────────────────────────────
-  section('6. Chatbot — submit answer');
-  if (sessionId && questionId) {
-    const answerRes = await post('/api/agent/answer', {
-      sessionId,
-      questionId,
-      answer: 'React uses a virtual DOM to efficiently reconcile UI updates. The useState hook manages component-level state and triggers re-renders when state changes. React.memo and useMemo can optimize performance by preventing unnecessary re-renders.',
-      timedOut: false,
-    }, token);
-    assert('POST /api/agent/answer returns 200', answerRes.status === 200, answerRes.body);
-    assert('sessionId matches', answerRes.body.sessionId === sessionId, answerRes.body);
-    assert('status is active or completed', ['active', 'completed'].includes(answerRes.body.status), answerRes.body);
-    assert('transcript grew', Array.isArray(answerRes.body.transcript) && answerRes.body.transcript.length > startRes.body.transcript.length, answerRes.body.transcript?.length);
+  if (!geminiAvailable) {
+    console.log(`  ${YELLOW('⚠ GEMINI_API_KEY not configured — skipping all chatbot Gemini tests (sections 5, 6, 7)')}`);
+    console.log(`  ${YELLOW('  Set GEMINI_API_KEY in .env to enable these tests.')}`);
   } else {
-    console.log(`  ${YELLOW('⚠ Skipping answer test — session or question not created (Gemini may be offline)')}`);
-  }
+    const startRes = await post('/api/agent/start', { profile }, token);
+    assert('POST /api/agent/start returns 200', startRes.status === 200, startRes.body);
+    assert('response has sessionId', typeof startRes.body.sessionId === 'string', startRes.body);
+    assert('status is active', startRes.body.status === 'active', startRes.body);
+    assert('has currentQuestion', startRes.body.currentQuestion !== null, startRes.body);
+    assert('currentQuestion has text', typeof startRes.body.currentQuestion?.text === 'string', startRes.body.currentQuestion);
+    assert('currentQuestion has dueAt', typeof startRes.body.currentQuestion?.dueAt === 'string', startRes.body.currentQuestion);
+    assert('transcript has entries', Array.isArray(startRes.body.transcript) && startRes.body.transcript.length > 0, startRes.body.transcript);
+    assert('skillStates populated', Array.isArray(startRes.body.skillStates) && startRes.body.skillStates.length > 0, startRes.body.skillStates);
 
-  // ── 7. Chatbot — proctor event ────────────────────────────────────────
-  section('7. Chatbot — proctor event');
-  if (sessionId) {
-    // Create a fresh session for proctor testing to avoid interference
+    sessionId = startRes.body.sessionId;
+    questionId = startRes.body.currentQuestion?.id;
+
+    // ── 6. Chatbot — submit answer ──────────────────────────────────────
+    section('6. Chatbot — submit answer');
+    if (sessionId && questionId) {
+      const answerRes = await post('/api/agent/answer', {
+        sessionId,
+        questionId,
+        answer: 'React uses a virtual DOM to efficiently reconcile UI updates. The useState hook manages component-level state and triggers re-renders when state changes. React.memo and useMemo can optimize performance by preventing unnecessary re-renders.',
+        timedOut: false,
+      }, token);
+      assert('POST /api/agent/answer returns 200', answerRes.status === 200, answerRes.body);
+      assert('sessionId matches', answerRes.body.sessionId === sessionId, answerRes.body);
+      assert('status is active or completed', ['active', 'completed'].includes(answerRes.body.status), answerRes.body);
+      assert('transcript grew', Array.isArray(answerRes.body.transcript) && answerRes.body.transcript.length > startRes.body.transcript.length, answerRes.body.transcript?.length);
+    }
+
+    // ── 7. Chatbot — proctor event ──────────────────────────────────────
+    section('7. Chatbot — proctor event');
     const proctorSession = await post('/api/agent/start', {
-      profile: {
-        ...profile,
-        email: `proctor-${Date.now()}@skillpath-test.com`,
-      },
+      profile: { ...profile, email: `proctor-${Date.now()}@skillpath-test.com` },
     }, token);
 
     if (proctorSession.status === 200 && proctorSession.body.sessionId) {
@@ -180,11 +185,7 @@ async function runTests() {
       }, token);
       assert('POST /api/agent/proctor returns 200', proctorRes.status === 200, proctorRes.body);
       assert('warningCount incremented to 1', proctorRes.body.warningCount === 1, proctorRes.body);
-    } else {
-      console.log(`  ${YELLOW('⚠ Skipping proctor test — could not create fresh session')}`);
     }
-  } else {
-    console.log(`  ${YELLOW('⚠ Skipping proctor test — no active session')}`);
   }
 
   // ── 8. Chatbot — no claimed skills (skipped) ──────────────────────────
