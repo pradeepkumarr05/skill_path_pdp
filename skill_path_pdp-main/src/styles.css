@@ -1,0 +1,61 @@
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/newsreader/wght-italic.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  color: #151515;
+  background: #101314;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #00a884;
+  outline-offset: 2px;
+}
+
+.auth-backdrop {
+  background: #101314;
+}
+
+.auth-panel-grid {
+  background-image:
+    linear-gradient(rgba(247, 240, 230, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(247, 240, 230, 0.09) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.logo-script {
+  font-family: 'Newsreader Variable', Georgia, serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 60;
+}

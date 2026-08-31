@@ -1,0 +1,39 @@
+{
+  "name": "skillpath",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/dev.mjs",
+    "dev:client": "vite --host 0.0.0.0",
+    "dev:api": "node server/index.mjs",
+    "migrate": "node server/migrate.mjs",
+    "test:api": "node server/test.mjs",
+    "setup": "node server/migrate.mjs",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "bcrypt": "^6.0.0",
+    "framer-motion": "^11.11.17",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}
