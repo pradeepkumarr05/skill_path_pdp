@@ -31,7 +31,6 @@ const PROCTOR_WARNING_LIMIT = 3;
 const MEDIUM_PASS_SCORE = 65;
 const HARD_PASS_SCORE = 70;
 
-// ── Schemas for Gemini structured output ──────────────────────────────────
 const questionSchema = {
   type: 'OBJECT',
   properties: {
@@ -41,18 +40,32 @@ const questionSchema = {
   required: ['question', 'intent'],
 };
 
-const evaluationSchema = {
+const combinedEvaluationSchema = {
   type: 'OBJECT',
   properties: {
-    score: { type: 'NUMBER' },
-    level: { type: 'STRING', enum: ['novice', 'developing', 'job_ready', 'strong'] },
-    pass: { type: 'BOOLEAN' },
-    feedback: { type: 'STRING' },
-    strengths: { type: 'ARRAY', items: { type: 'STRING' } },
-    gaps: { type: 'ARRAY', items: { type: 'STRING' } },
-    nextAction: { type: 'STRING', enum: ['ask_hard', 'complete_skill'] },
+    evaluation: {
+      type: 'OBJECT',
+      properties: {
+        score: { type: 'NUMBER' },
+        level: { type: 'STRING', enum: ['novice', 'developing', 'job_ready', 'strong'] },
+        pass: { type: 'BOOLEAN' },
+        feedback: { type: 'STRING' },
+        strengths: { type: 'ARRAY', items: { type: 'STRING' } },
+        gaps: { type: 'ARRAY', items: { type: 'STRING' } },
+        nextAction: { type: 'STRING', enum: ['ask_hard', 'complete_skill'] }
+      },
+      required: ['score', 'level', 'pass', 'feedback', 'strengths', 'gaps', 'nextAction']
+    },
+    nextQuestion: {
+      type: 'OBJECT',
+      properties: {
+        question: { type: 'STRING' },
+        intent: { type: 'STRING' }
+      },
+      required: ['question', 'intent']
+    }
   },
-  required: ['score', 'level', 'pass', 'feedback', 'strengths', 'gaps', 'nextAction'],
+  required: ['evaluation'] // nextQuestion might be omitted if assessment is complete
 };
 
 // ── Utility ───────────────────────────────────────────────────────────────
@@ -501,7 +514,7 @@ export async function startAgenticSession(profileInput, candidateId) {
 async function generateQuestion(sessionData, skillState, difficulty, recentTranscript) {
   const response = await generateGeminiJson({
     systemInstruction:
-      'You are the SkillPath assessment chatbot. Your job is to generate the next candidate-facing question in an adaptive technical interview. You must be precise, practical, and concise. Return only valid JSON.',
+      'You are a strict, professional AI examiner for an online technical assessment. Your task is to generate the next highly precise, practical, and challenging technical question. Avoid all pleasantries, introductions, or conversational filler. Be extremely direct and concise. Return only valid JSON.',
     prompt: buildQuestionPrompt(sessionData, skillState, difficulty, recentTranscript),
     schema: questionSchema,
     temperature: difficulty === 'hard' ? 0.45 : 0.35,
@@ -608,26 +621,7 @@ export async function submitAgenticAnswer(sessionId, payload, candidateId) {
 
   const evaluation = await evaluateWithGemini(session, question, skillState, answer, timedOut);
 
-  // Add evaluation feedback to transcript
-  await query(
-    `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'agent', $2, $3)`,
-    [
-      sessionId,
-      evaluation.feedback,
-      JSON.stringify({
-        type: 'evaluation',
-        questionId,
-        skill: question.skill,
-        difficulty: question.difficulty,
-        score: evaluation.score,
-        level: evaluation.level,
-        strengths: evaluation.strengths,
-        gaps: evaluation.gaps,
-      }),
-    ],
-  );
-
-  // Record the attempt
+  // Record the attempt (evaluation is saved but NOT shown to the candidate)
   await query(
     `INSERT INTO chat_skill_attempts (skill_state_id, session_id, question_id, difficulty, score, level, feedback, strengths, gaps)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
@@ -655,7 +649,7 @@ export async function submitAgenticAnswer(sessionId, payload, candidateId) {
 async function evaluateWithGemini(session, question, skillState, answer, timedOut) {
   const response = await generateGeminiJson({
     systemInstruction:
-      'You are the SkillPath assessment evaluator. You evaluate typed technical answers for job readiness. Return only strict JSON matching the requested schema.',
+      'You are a strict, professional AI examiner. You evaluate typed technical answers for job readiness. Be brutally objective, concise, and professional. Do not praise the user unnecessarily. Return only strict JSON matching the requested schema.',
     prompt: buildEvaluationPrompt(session, question, skillState, answer, timedOut),
     schema: evaluationSchema,
     temperature: 0.2,
@@ -902,38 +896,59 @@ export async function recordProctorEvent(sessionId, payload, candidateId) {
 
   await insertProctorEvent(sessionId, null, 'chat', type, detail);
 
-  // Update warning count and add transcript
-  const { rows: updated } = await query(
-    `UPDATE chat_sessions SET warning_count = warning_count + 1 WHERE id = $1
-     RETURNING warning_count, warning_limit`,
-    [sessionId],
-  );
+  const isCritical = type === 'fullscreen_exit' || type === 'camera_track_ended';
+  let terminate = isCritical;
 
-  const { warning_count, warning_limit } = updated[0];
-
-  await query(
-    `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'system', $2, $3)`,
-    [
-      sessionId,
-      `${label}. Warning ${warning_count}/${warning_limit}.`,
-      JSON.stringify({ type: 'proctor_warning', violationType: type }),
-    ],
-  );
-
-  if (warning_count >= warning_limit) {
+  if (isCritical) {
+    // For critical violations, don't increment warning count, just terminate immediately
     await query(
       `UPDATE chat_sessions SET status = 'terminated', terminated_at = NOW(),
        current_question_id = NULL, reason = $1 WHERE id = $2`,
-      ['Assessment terminated after repeated proctoring violations.', sessionId],
+      ['Assessment terminated immediately: Critical violation (exited full-screen or camera lost).', sessionId],
     );
     await query(
       `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'system', $2, $3)`,
       [
         sessionId,
-        'Assessment terminated after repeated proctoring violations.',
-        JSON.stringify({ type: 'terminated' }),
+        'Assessment terminated immediately: Critical violation (exited full-screen or camera lost).',
+        JSON.stringify({ type: 'terminated', reason: type }),
       ],
     );
+  } else {
+    // Normal warning logic
+    const { rows: updated } = await query(
+      `UPDATE chat_sessions SET warning_count = warning_count + 1 WHERE id = $1
+       RETURNING warning_count, warning_limit`,
+      [sessionId],
+    );
+
+    const { warning_count, warning_limit } = updated[0];
+    terminate = warning_count >= warning_limit;
+
+    await query(
+      `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'system', $2, $3)`,
+      [
+        sessionId,
+        `${label}. Warning ${warning_count}/${warning_limit}.`,
+        JSON.stringify({ type: 'proctor_warning', violationType: type }),
+      ],
+    );
+
+    if (terminate) {
+      await query(
+        `UPDATE chat_sessions SET status = 'terminated', terminated_at = NOW(),
+         current_question_id = NULL, reason = $1 WHERE id = $2`,
+        ['Assessment terminated after repeated proctoring violations.', sessionId],
+      );
+      await query(
+        `INSERT INTO chat_transcript (session_id, role, text, meta) VALUES ($1, 'system', $2, $3)`,
+        [
+          sessionId,
+          'Assessment terminated after repeated proctoring violations.',
+          JSON.stringify({ type: 'terminated' }),
+        ],
+      );
+    }
   }
 
   return loadPublicSession(sessionId);
@@ -1035,19 +1050,26 @@ export async function recordSkillAssessmentProctorEvent(assessmentId, payload, c
 
   await insertProctorEvent(null, assessmentId, 'skill', type, detail);
 
-  const { rows: updated } = await query(
-    `UPDATE skill_assessments SET warning_count = warning_count + 1 WHERE id = $1
-     RETURNING warning_count, warning_limit`,
-    [assessmentId],
-  );
-
-  const { warning_count, warning_limit } = updated[0];
-
-  if (warning_count >= warning_limit) {
+  if (type === 'fullscreen_exit' || type === 'camera_track_ended') {
     await query(
       `UPDATE skill_assessments SET status = 'terminated', terminated_at = NOW() WHERE id = $1`,
       [assessmentId],
     );
+  } else {
+    const { rows: updated } = await query(
+      `UPDATE skill_assessments SET warning_count = warning_count + 1 WHERE id = $1
+       RETURNING warning_count, warning_limit`,
+      [assessmentId],
+    );
+  
+    const { warning_count, warning_limit } = updated[0];
+  
+    if (warning_count >= warning_limit) {
+      await query(
+        `UPDATE skill_assessments SET status = 'terminated', terminated_at = NOW() WHERE id = $1`,
+        [assessmentId],
+      );
+    }
   }
 
   return loadPublicSkillAssessment(assessmentId);

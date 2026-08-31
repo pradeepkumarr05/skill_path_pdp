@@ -9,6 +9,7 @@
     "dev:api": "node server/index.mjs",
     "migrate": "node server/migrate.mjs",
     "test:api": "node server/test.mjs",
+    "test:unit": "node server/test-state-machine.mjs",
     "setup": "node server/migrate.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",

@@ -155,7 +155,7 @@ npm run test:api
 | `GEMINI_API_KEY` | Yes | Google AI Studio API key |
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | JWT signing secret (any random string) |
-| `GEMINI_MODEL` | No | Override model (default: `gemini-2.5-flash`) |
+| `GEMINI_MODEL` | No | Override model (default: `gemini-3.6-flash`) |
 | `JWT_EXPIRES_IN` | No | Token TTL (default: `7d`) |
 | `API_PORT` | No | API port (default: `8787`) |
 

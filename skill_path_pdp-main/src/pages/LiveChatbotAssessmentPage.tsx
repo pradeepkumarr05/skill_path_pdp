@@ -210,7 +210,7 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
   };
 
   return (
-    <main className="min-h-screen bg-skillpath-night p-4 text-skillpath-cream sm:p-5 lg:p-6">
+    <main className="min-h-screen bg-skillpath-night p-4 text-skillpath-cream sm:p-5 lg:p-6 select-none">
       <div className="flex min-h-[calc(100vh-32px)] w-full flex-col rounded-lg border border-white/10 bg-skillpath-night shadow-panel sm:min-h-[calc(100vh-40px)] lg:min-h-[calc(100vh-48px)]">
         <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center justify-between gap-4">
@@ -266,6 +266,19 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
                 {session?.transcript.map((entry) => (
                   <TranscriptBubble key={entry.id} role={entry.role} text={entry.text} meta={entry.meta} />
                 ))}
+
+                {submitting && (
+                  <div className="flex justify-start animate-fade-in">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-white/10 bg-skillpath-night p-4 shadow-sm">
+                      <div className="flex items-center gap-2 text-skillpath-teal">
+                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-current"></div>
+                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-current" style={{ animationDelay: '200ms' }}></div>
+                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-current" style={{ animationDelay: '400ms' }}></div>
+                      </div>
+                      <p className="mt-2 text-xs font-bold text-skillpath-cream/60">Preparing next question...</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {session?.status === 'active' && activeQuestion ? (
@@ -343,6 +356,28 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
           </aside>
         </div>
       </div>
+      {session?.status === 'terminated' && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-skillpath-night/95 p-6 backdrop-blur-sm">
+          <div className="flex max-w-lg flex-col items-center text-center rounded-xl border border-skillpath-danger bg-white p-10 shadow-2xl">
+            <WarningCircle className="h-16 w-16 text-skillpath-danger mb-4" weight="fill" />
+            <h2 className="text-3xl font-black text-skillpath-night mb-4">Assessment Terminated</h2>
+            <p className="text-lg font-bold text-skillpath-night/80 mb-8">
+              {session.reason || 'This session was terminated due to a proctoring violation (Camera or Full-screen lost).'}
+            </p>
+            <p className="text-sm font-bold text-skillpath-danger mb-6">
+              You violated the strict assessment constraints. You are being redirected.
+            </p>
+            <button
+              onClick={() => { window.location.href = '/'; }}
+              className="w-full rounded-md bg-skillpath-danger px-6 py-4 text-lg font-black text-white hover:bg-red-700 transition"
+            >
+              Exit Now
+            </button>
+            {/* Auto redirect script */}
+            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onLoad={() => setTimeout(() => { window.location.href = '/'; }, 4000)} alt="" />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

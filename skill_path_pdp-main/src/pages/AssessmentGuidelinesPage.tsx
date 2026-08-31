@@ -30,8 +30,8 @@ interface AssessmentGuidelinesPageProps {
 const guidelineItems = [
   {
     id: 'permissions',
-    title: 'Allow camera and microphone',
-    detail: 'Camera and microphone access are required before the chatbot room opens.',
+    title: 'Allow camera (microphone optional)',
+    detail: 'Camera access is required before the chatbot room opens. Microphone is recommended but optional.',
     icon: Camera,
   },
   {
@@ -114,7 +114,13 @@ export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSk
         throw new Error('This browser does not expose the required camera, microphone, and screen-share APIs.');
       }
 
-      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      } catch (audioVideoErr) {
+        // Fallback to video only if microphone access is denied or unavailable
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+      
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
 
       if (!document.fullscreenElement) {
@@ -125,8 +131,8 @@ export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSk
       const hasMicrophone = cameraStream.getAudioTracks().some((track) => track.readyState === 'live');
       const hasScreen = screenStream.getVideoTracks().some((track) => track.readyState === 'live');
 
-      if (!hasCamera || !hasMicrophone || !hasScreen || !document.fullscreenElement) {
-        throw new Error('Camera, microphone, screen share, and full-screen access are all required.');
+      if (!hasCamera || !hasScreen || !document.fullscreenElement) {
+        throw new Error('Camera, screen share, and full-screen access are required.');
       }
 
       const accessGrant = {
