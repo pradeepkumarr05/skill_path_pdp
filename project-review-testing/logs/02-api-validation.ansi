@@ -1,0 +1,71 @@
+Script started on 2026-09-01 10:29:05+05:30 [COMMAND="npm run test:api" TERM="xterm-256color" TTY="/dev/pts/5" COLUMNS="106" LINES="63"]
+
+> skillpath@0.1.0 test:api
+> node server/test.mjs
+
+[1m
+SkillPath End-to-End API Tests[0m
+Base URL: http://localhost:8787
+
+
+[1m1. Health check[0m
+  [32m✓[0m GET /api/health returns 200
+  [32m✓[0m ok: true
+  [32m✓[0m geminiConfigured field present
+
+[1m2. Auth - CSRF and registration[0m
+  [32m✓[0m GET /api/auth/csrf-token returns a token
+  [32m✓[0m POST /api/auth/register returns 201
+  [32m✓[0m registration returns access token
+  [32m✓[0m registered user has no completed profile yet
+
+[1m3. Auth - profile PDF validation and persistence[0m
+  [32m✓[0m profile rejects non-PDF resume metadata
+  [32m✓[0m profile rejection explains PDF-only rule
+  [32m✓[0m POST /api/auth/profile returns 200
+  [32m✓[0m profileComplete is true after setup save
+  [32m✓[0m candidate setup is returned
+  [32m✓[0m PDF document names are persisted
+
+[1m4. Auth - login returns saved setup[0m
+  [32m✓[0m POST /api/auth/login returns 200
+  [32m✓[0m login returns token
+  [32m✓[0m login hydrates persisted profile
+  [32m✓[0m login has no latest result before assessment submit
+  [32m✓[0m GET /api/auth/me returns 200
+  [32m✓[0m GET /api/auth/me includes candidate setup
+
+[1m5. Protected route enforcement[0m
+  [32m✓[0m POST /api/agent/start without token returns 401
+  [32m✓[0m POST /api/skill-assessment with invalid token returns 401
+
+[1m6. Chatbot - no claimed skills skip path[0m
+  [32m✓[0m no-skill chatbot path returns 200
+  [32m✓[0m no-skill chatbot path is skipped
+
+[1m7. Chatbot - Gemini path[0m
+  [33m⚠ GEMINI_API_KEY not configured - skipping live Gemini question/evaluation assertions.[0m
+
+[1m8. MCQ assessment - create and submit[0m
+  [32m✓[0m POST /api/skill-assessment returns 200
+  [32m✓[0m assessment has id and active status
+  [32m✓[0m items do not expose correctChoice
+  [32m✓[0m POST /api/skill-assessment/submit returns 200
+  [32m✓[0m submission returns scored result
+  [32m✓[0m result count matches item count
+
+[1m9. Auth - returning login hydrates dashboard result[0m
+  [32m✓[0m returning login returns 200
+  [32m✓[0m returning login includes latest skill result
+
+[1m10. MCQ proctoring and terminated-submit rejection[0m
+  [32m✓[0m fresh assessment for proctor test is active
+  [32m✓[0m third MCQ warning terminates assessment
+  [32m✓[0m submit on terminated assessment returns 409
+
+-------------------------------------------------------
+[1mResults: [32m34 passed[0m  0 failed[0m
+
+[32mAll tests passed![0m
+⠙[1G[0K
+Script done on 2026-09-01 10:29:06+05:30 [COMMAND_EXIT_CODE="0"]

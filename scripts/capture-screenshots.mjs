@@ -3,7 +3,7 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
-const SCREENSHOT_DIR = path.resolve(process.cwd(), 'screenshots');
+const SCREENSHOT_DIR = path.resolve(process.cwd(), process.env.SCREENSHOT_DIR || 'screenshots');
 const PASSWORD = 'CorrectHorse42!';
 const email = `screens-${Date.now()}@skillpath-test.com`;
 
@@ -297,7 +297,7 @@ async function run() {
     await returningPage.goto(APP_URL, { waitUntil: 'networkidle' });
     await returningPage.getByLabel('Email address').fill(email);
     await returningPage.locator('input[type="password"]').first().fill(PASSWORD);
-    await returningPage.getByRole('button', { name: /^Sign in$/ }).click();
+    await returningPage.locator('form').getByRole('button', { name: /^Sign in$/ }).click();
     await returningPage.getByRole('heading', { name: 'Learning Gap Engine' }).waitFor();
     await screenshot(returningPage, '11-returning-login-dashboard-redirect.png');
     await returningContext.close();

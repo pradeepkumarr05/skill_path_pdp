@@ -1,0 +1,115 @@
+Script started on 2026-09-01 10:25:39+05:30 [COMMAND="npm test" TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="106" LINES="65"]
+
+> skillpath@0.1.0 test
+> npm run test:unit && npm run typecheck && npm run build
+
+
+> skillpath@0.1.0 test:unit
+> vitest run --reporter=verbose && node server/test-state-machine.mjs
+
+[?25l
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/anj/skill_path_pdp[39m
+
+[?2026h
+[1m[33m ❯ [39m[22msrc/utils/documentValidation.test.ts[2m [queued][22m
+
+[2m Test Files [22m[1m[32m0 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m[1m[32m0 passed[39m[22m[90m (0)[39m
+[2m   Start at [22m10:25:40
+[2m   Duration [22m492ms
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+[1m[33m ❯ [39m[22msrc/utils/authSession.test.ts[2m [queued][22m
+[1m[33m ❯ [39m[22msrc/utils/documentValidation.test.ts[2m 0/3[22m
+
+[2m Test Files [22m[1m[32m0 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m[1m[32m0 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m10:25:40
+[2m   Duration [22m695ms
+[?2026l[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K [32m✓[39m src/utils/documentValidation.test.ts[2m > [22mdocumentValidation[2m > [22maccepts PDF documents by extension and MIME type[32m 5[2mms[22m[39m
+ [32m✓[39m src/utils/documentValidation.test.ts[2m > [22mdocumentValidation[2m > [22mallows empty MIME type when the browser only provides the filename[32m 1[2mms[22m[39m
+ [32m✓[39m src/utils/documentValidation.test.ts[2m > [22mdocumentValidation[2m > [22mrejects Word documents, images, and spoofed PDF filenames[32m 2[2mms[22m[39m
+ [32m✓[39m src/utils/authSession.test.ts[2m > [22mauthSession helpers[2m > [22mbuilds a profile setup result from a persisted candidate row[32m 7[2mms[22m[39m
+ [32m✓[39m src/utils/authSession.test.ts[2m > [22mauthSession helpers[2m > [22mroutes incomplete users to profile setup[32m 1[2mms[22m[39m
+ [32m✓[39m src/utils/authSession.test.ts[2m > [22mauthSession helpers[2m > [22mroutes profile-complete users without results to assessment entry[32m 1[2mms[22m[39m
+ [32m✓[39m src/utils/authSession.test.ts[2m > [22mauthSession helpers[2m > [22mroutes returning users with a latest result to the learning gap engine[32m 1[2mms[22m[39m
+ [32m✓[39m src/utils/authSession.test.ts[2m > [22mauthSession helpers[2m > [22mextracts a professional first-name greeting fallback[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 10:25:40
+[2m   Duration [22m 792ms[2m (transform 200ms, setup 0ms, import 286ms, tests 27ms, environment 0ms)[22m
+
+[?25h
+[1m1. Score clamping[0m
+  [32m✓[0m clamp 0 stays 0
+  [32m✓[0m clamp 100 stays 100
+  [32m✓[0m clamp -5 becomes 0
+  [32m✓[0m clamp 105 becomes 100
+  [32m✓[0m clamp NaN becomes 0
+  [32m✓[0m clamp 72.6 rounds to 73
+  [32m✓[0m clamp 72.4 rounds to 72
+
+[1m2. Level thresholds[0m
+  [32m✓[0m score 85 → strong
+  [32m✓[0m score 100 → strong
+  [32m✓[0m score 84 → job_ready
+  [32m✓[0m score 70 → job_ready
+  [32m✓[0m score 69 → developing
+  [32m✓[0m score 45 → developing
+  [32m✓[0m score 44 → novice
+  [32m✓[0m score 0 → novice
+
+[1m3. Final skill score (45% medium + 55% hard)[0m
+  [32m✓[0m medium=80, hard=90 → 86
+  [32m✓[0m medium=75, hard=50 → 61
+  [32m✓[0m medium=50, hard=0 → 23
+  [32m✓[0m medium=100, hard=100 → 100
+  [32m✓[0m medium=0, hard=0 → 0
+
+[1m4. Aggregate score (average of skill finalScores)[0m
+  [32m✓[0m 1 skill at 80 → 80
+  [32m✓[0m 2 skills: 80+60 → 70
+  [32m✓[0m 3 skills: 90+70+50 → 70
+  [32m✓[0m empty array → 0
+
+[1m5. Proctor warning limit logic[0m
+  [32m✓[0m 1 warning: not terminated
+  [32m✓[0m 2 warnings: not terminated
+  [32m✓[0m 3 warnings: terminated
+
+[1m6. MCQ grading logic[0m
+  [32m✓[0m 22/22 correct → 100 strong
+  [32m✓[0m 0/22 correct → 0 novice
+  [32m✓[0m 16/22 correct → 73 job_ready
+  [32m✓[0m 10/22 correct → 45 developing
+
+[1m7. Answer timeout detection[0m
+  [32m✓[0m past dueAt → timed out
+  [32m✓[0m future dueAt → not timed out
+
+───────────────────────────────────────────────────────
+[1mResults: [32m33 passed[0m  0 failed[0m
+
+[32mAll unit tests passed! ✓[0m
+⠙[1G[0K
+> skillpath@0.1.0 typecheck
+> tsc --noEmit
+
+⠙[1G[0K
+> skillpath@0.1.0 build
+> tsc --noEmit && vite build
+
+[36mvite v6.4.3 [32mbuilding for production...[36m[39m
+[2K[1Gtransforming (1) [2msrc/main.tsx[22m[2K[1Gtransforming (4) [2msrc/App.tsx[22m[2K[1Gtransforming (16) [2msrc/pages/AssessmentGuidelinesPage.tsx[22m[2K[1Gtransforming (24) [2mnode_modules/@phosphor-icons/react/dist/index.es.js[22m[2K[1Gtransforming (26) [2msrc/components/SkillPathLogo.tsx[22m[2K[1G[2K[1Gtransforming (903) [2mnode_modules/@phosphor-icons/react/dist/csr/Log.es.js[22m[2K[1Gtransforming (1033) [2mnode_modules/@phosphor-icons/react/dist/csr/Orange.es.js[22m[2K[1Gtransforming (1912) [2mnode_modules/@phosphor-icons/react/dist/ssr/BriefcaseMetal.es.js[22m[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (2036) [2mnode_modules/@phosphor-icons/react/dist/ssr/CheckFat.es.js[22m[2K[1G[2K[1G[2K[1Gtransforming (3030) [2mnode_modules/@phosphor-icons/react/dist/ssr/TextB.es.js[22m[2K[1Gtransforming (3036) [2mnode_modules/@phosphor-icons/react/dist/ssr/TextHSix.es.js[22m[2K[1Gtransforming (4038) [2mnode_modules/@phosphor-icons/react/dist/defs/LockKey.es.js[22m[2K[1Gtransforming (4042) [2mnode_modules/@phosphor-icons/react/dist/defs/LockSimple.es.js[22m[2K[1Gtransforming (4684) [2mnode_modules/@phosphor-icons/react/dist/defs/Wrench.es.js[22m[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (4800) [2mnode_modules/framer-motion/dist/es/render/components/create-proxy.mjs[22m[2K[1G[2K[1G[2K[1G[2K[1G[32m✓[39m 4937 modules transformed.
+[2K[1Grendering chunks (1)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1Gcomputing gzip size (3)...[2K[1G[2mdist/[22m[32mindex.html                                                        [39m[1m[2m  0.47 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[2massets/[22m[32mbricolage-grotesque-vietnamese-wght-normal-BUzh504Q.woff2  [39m[1m[2m  8.61 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[32mnewsreader-vietnamese-wght-italic-xAqemagA.woff2           [39m[1m[2m 12.08 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[32mbricolage-grotesque-latin-ext-wght-normal-CcLUaPy7.woff2   [39m[1m[2m 18.67 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[32mnewsreader-latin-ext-wght-italic-DFS986qL.woff2            [39m[1m[2m 39.68 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[32mbricolage-grotesque-latin-wght-normal-DLoelf7F.woff2       [39m[1m[2m 41.34 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[32mnewsreader-latin-wght-italic-Bxi8ein9.woff2                [39m[1m[2m 64.52 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[35mindex-DMmeu9h0.css                                         [39m[1m[2m 24.03 kB[22m[1m[22m[2m │ gzip:   5.48 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DlMKWnER.js                                          [39m[1m[2m480.69 kB[22m[1m[22m[2m │ gzip: 137.32 kB[22m
+[32m✓ built in 4.71s[39m
+⠙[1G[0K⠙[1G[0K
+Script done on 2026-09-01 10:25:55+05:30 [COMMAND_EXIT_CODE="0"]
