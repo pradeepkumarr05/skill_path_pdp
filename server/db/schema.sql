@@ -22,6 +22,45 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email));
 CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_idx ON users (google_id) WHERE google_id IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS candidates (
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id              UUID REFERENCES users(id) ON DELETE CASCADE,
+  name                 TEXT NOT NULL DEFAULT 'Candidate',
+  email                TEXT NOT NULL UNIQUE,
+  qualification        TEXT NOT NULL DEFAULT '',
+  selected_domain      TEXT NOT NULL DEFAULT 'Full Stack Engineering',
+  assessment_domain    TEXT NOT NULL DEFAULT 'Full Stack Engineering',
+  interested_roles     TEXT[] NOT NULL DEFAULT '{}',
+  claimed_skills       TEXT[] NOT NULL DEFAULT '{}',
+  resume_file_name     TEXT,
+  transcript_file_name TEXT,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_candidates_user_id ON candidates(user_id) WHERE user_id IS NOT NULL;
+
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS resume_file_name TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS transcript_file_name TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_candidates_user_id ON candidates(user_id) WHERE user_id IS NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'candidates_user_id_fkey'
+      AND conrelid = 'candidates'::regclass
+  ) THEN
+    ALTER TABLE candidates
+      ADD CONSTRAINT candidates_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+  END IF;
+END;
+$$;
+
 -- GitHub Sign-In columns. Added via idempotent ALTERs (rather than folded
 -- into CREATE TABLE above) so this file can be re-run safely against a
 -- database that was already migrated before GitHub support existed.

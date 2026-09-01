@@ -13,7 +13,7 @@ import {
   revokeRefreshToken,
   rotateRefreshToken,
 } from './authService.mjs';
-import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, validate } from './validation.mjs';
+import { forgotPasswordSchema, loginSchema, profileSetupSchema, registerSchema, resetPasswordSchema, validate } from './validation.mjs';
 import { verifyGoogleIdToken } from './googleAuth.mjs';
 import { exchangeGithubCode, isGithubAuthConfigured } from './githubAuth.mjs';
 import { verifyAccessToken, ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS } from './tokens.mjs';
@@ -40,11 +40,15 @@ const baseCookieOptions = {
   path: '/',
 };
 
-function setSessionCookies(res, { accessToken, refreshToken }) {
-  res.cookie(ACCESS_COOKIE, accessToken, { ...baseCookieOptions, maxAge: ACCESS_TOKEN_TTL_SECONDS * 1000 });
+function cookieOptionsWithMaxAge(baseOptions, maxAge) {
+  return maxAge ? { ...baseOptions, maxAge } : baseOptions;
+}
+
+function setSessionCookies(res, { accessToken, refreshToken }, { rememberDevice = true } = {}) {
+  res.cookie(ACCESS_COOKIE, accessToken, cookieOptionsWithMaxAge({ ...baseCookieOptions }, rememberDevice ? ACCESS_TOKEN_TTL_SECONDS * 1000 : null));
   res.cookie(REFRESH_COOKIE, refreshToken, {
     ...baseCookieOptions,
-    maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000,
+    ...(rememberDevice ? { maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000 } : {}),
     path: '/api/auth', // only sent back to auth endpoints, minimizing exposure
   });
 }
@@ -56,6 +60,37 @@ function clearSessionCookies(res) {
 
 function clientMeta(req) {
   return { ipAddress: req.ip, userAgent: req.get('user-agent') || undefined };
+}
+
+function normalizeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName ?? user.full_name ?? null,
+  };
+}
+
+async function buildAuthResponse(user, token) {
+  const normalizedUser = normalizeUser(user);
+  let dashboard = { candidate: null, latestSkillResult: null, latestChatSession: null };
+
+  try {
+    const { getCandidateDashboardForAuthUser } = await import('../agentRuntimeDb.mjs');
+    dashboard = await getCandidateDashboardForAuthUser(normalizedUser.id, normalizedUser.email);
+  } catch (err) {
+    console.warn('[auth] Unable to load persisted profile snapshot:', err.message);
+  }
+
+  return {
+    user: {
+      ...normalizedUser,
+      profileComplete: Boolean(dashboard.candidate),
+      candidate: dashboard.candidate,
+      latestSkillResult: dashboard.latestSkillResult,
+      latestChatSession: dashboard.latestChatSession,
+    },
+    ...(token ? { token } : {}),
+  };
 }
 
 // GET /api/auth/csrf-token - call before register/login/logout to obtain a
@@ -75,8 +110,8 @@ authRouter.post('/register', registerRateLimiter, requireCsrfToken, async (req, 
     const user = await registerUser(data);
     const accessToken = issueAccessToken(user);
     const refreshToken = await issueRefreshToken(user, clientMeta(req));
-    setSessionCookies(res, { accessToken, refreshToken });
-    return res.status(201).json({ user: { id: user.id, email: user.email, fullName: user.full_name } });
+    setSessionCookies(res, { accessToken, refreshToken }, { rememberDevice: data.rememberDevice !== false });
+    return res.status(201).json(await buildAuthResponse(user, accessToken));
   } catch (err) {
     if (err instanceof AuthError) {
       return res.status(err.status).json({ error: err.message, code: err.code });
@@ -88,49 +123,6 @@ authRouter.post('/register', registerRateLimiter, requireCsrfToken, async (req, 
 
 // POST /api/auth/login
 authRouter.post('/login', loginRateLimiter, requireCsrfToken, async (req, res) => {
-  // If no password provided, treat as candidate registration/login from profile setup
-  if (!req.body?.password) {
-    const email = String(req.body?.email || '').trim().toLowerCase();
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'A valid email address is required.' });
-    }
-
-    try {
-      const { getOrCreateCandidate } = await import('../agentRuntimeDb.mjs');
-      const candidate = await getOrCreateCandidate(req.body);
-      const token = issueAccessToken({ id: candidate.id, email: candidate.email });
-      return res.status(200).json({
-        token,
-        candidate: {
-          id: candidate.id,
-          name: candidate.name,
-          email: candidate.email,
-          qualification: candidate.qualification,
-          selectedDomain: candidate.selected_domain,
-          assessmentDomain: candidate.assessment_domain,
-          interestedRoles: candidate.interested_roles || [],
-          claimedSkills: candidate.claimed_skills || [],
-        },
-      });
-    } catch (err) {
-      console.error('Candidate login error:', err);
-      const token = issueAccessToken({ id: '00000000-0000-0000-0000-000000000000', email });
-      return res.status(200).json({
-        token,
-        candidate: {
-          id: '00000000-0000-0000-0000-000000000000',
-          name: req.body?.name || 'Candidate',
-          email,
-          qualification: req.body?.qualification || '',
-          selectedDomain: req.body?.domain || 'Full Stack Engineering',
-          assessmentDomain: req.body?.domain || 'Full Stack Engineering',
-          interestedRoles: req.body?.interestedRoles || [],
-          claimedSkills: req.body?.claimedSkills || [],
-        },
-      });
-    }
-  }
-
   const { success, data, error } = validate(loginSchema, req.body);
   if (!success) {
     return res.status(400).json({ error });
@@ -140,8 +132,8 @@ authRouter.post('/login', loginRateLimiter, requireCsrfToken, async (req, res) =
     const user = await authenticateUser({ ...data, ...clientMeta(req) });
     const accessToken = issueAccessToken(user);
     const refreshToken = await issueRefreshToken(user, clientMeta(req));
-    setSessionCookies(res, { accessToken, refreshToken });
-    return res.status(200).json({ user, token: accessToken });
+    setSessionCookies(res, { accessToken, refreshToken }, { rememberDevice: data.rememberDevice !== false });
+    return res.status(200).json(await buildAuthResponse(user, accessToken));
   } catch (err) {
     if (err instanceof AuthError) {
       return res.status(err.status).json({ error: err.message, code: err.code });
@@ -166,7 +158,7 @@ authRouter.post('/google', loginRateLimiter, requireCsrfToken, async (req, res) 
     const accessToken = issueAccessToken(user);
     const refreshToken = await issueRefreshToken(user, clientMeta(req));
     setSessionCookies(res, { accessToken, refreshToken });
-    return res.status(200).json({ user });
+    return res.status(200).json(await buildAuthResponse(user, accessToken));
   } catch (err) {
     if (err instanceof AuthError || err.status) {
       return res.status(err.status || 401).json({ error: err.message, code: err.code });
@@ -302,7 +294,7 @@ authRouter.post('/refresh', refreshRateLimiter, requireCsrfToken, async (req, re
     const { user, refreshToken } = await rotateRefreshToken(rawRefreshToken, clientMeta(req));
     const accessToken = issueAccessToken(user);
     setSessionCookies(res, { accessToken, refreshToken });
-    return res.json({ user });
+    return res.json(await buildAuthResponse(user, accessToken));
   } catch (err) {
     clearSessionCookies(res);
     if (err instanceof AuthError) {
@@ -310,6 +302,29 @@ authRouter.post('/refresh', refreshRateLimiter, requireCsrfToken, async (req, re
     }
     console.error('Refresh error:', err);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// POST /api/auth/profile - persists the one-time candidate setup for the
+// signed-in account so future logins can open the dashboard directly.
+authRouter.post('/profile', requireCsrfToken, requireAuth, async (req, res) => {
+  const { success, data, error } = validate(profileSetupSchema, req.body);
+  if (!success) {
+    return res.status(400).json({ error });
+  }
+
+  try {
+    const profile = {
+      ...data,
+      email: req.auth.email,
+    };
+    const { upsertCandidate } = await import('../agentRuntimeDb.mjs');
+    await upsertCandidate(profile, req.auth.sub);
+    return res.status(200).json(await buildAuthResponse({ id: req.auth.sub, email: req.auth.email }));
+  } catch (err) {
+    const status = Number(err.statusCode || err.status) || 500;
+    if (status >= 500) console.error('Profile setup error:', err);
+    return res.status(status).json({ error: err.message || 'Unable to save profile setup.' });
   }
 });
 
@@ -333,33 +348,7 @@ authRouter.get('/me', async (req, res) => {
 
   try {
     const payload = verifyAccessToken(token);
-    try {
-      const { query } = await import('../db.mjs');
-      const { rows } = await query('SELECT * FROM candidates WHERE id = $1', [payload.sub]);
-      if (rows && rows.length > 0) {
-        const c = rows[0];
-        return res.json({
-          id: c.id,
-          name: c.name,
-          email: c.email,
-          qualification: c.qualification,
-          selectedDomain: c.selected_domain,
-          assessmentDomain: c.assessment_domain,
-          interestedRoles: c.interested_roles || [],
-          claimedSkills: c.claimed_skills || [],
-          createdAt: c.created_at,
-          user: { id: payload.sub, email: payload.email },
-        });
-      }
-    } catch {
-      // Fallback if DB query fails
-    }
-
-    return res.json({
-      id: payload.sub,
-      email: payload.email,
-      user: { id: payload.sub, email: payload.email },
-    });
+    return res.json(await buildAuthResponse({ id: payload.sub, email: payload.email }));
   } catch {
     return res.status(401).json({ error: 'Session expired.' });
   }

@@ -73,29 +73,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Helper to extract candidate / user ID if token present
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.cookies?.['access_token'];
-  if (token) {
-    try {
-      const { verifyAccessToken } = requireAuth;
-      // or decode
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-        req.auth = payload;
-        req.user = payload;
-      }
-    } catch {
-      // continue without auth
-    }
-  }
-  next();
-}
-
-app.use(optionalAuth);
-
 // --- Auth routes --------------------------------------------------------
 app.use('/api/auth', authRouter);
 
@@ -109,10 +86,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.use('/api/agent', requireAuth);
+app.use('/api/skill-assessment', requireAuth);
+
 // --- Chatbot Assessment Routes ------------------------------------------
 app.post('/api/agent/start', async (req, res, next) => {
   try {
-    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const candidateId = req.auth?.sub || req.user?.id;
     const session = await startAgenticSession(req.body.profile, candidateId);
     res.json(session);
   } catch (error) {
@@ -156,7 +136,7 @@ app.get('/api/agent/session', async (req, res, next) => {
 // --- MCQ Skill Assessment Routes ----------------------------------------
 app.post('/api/skill-assessment', async (req, res, next) => {
   try {
-    const candidateId = req.auth?.sub || req.user?.id || req.body?.candidateId;
+    const candidateId = req.auth?.sub || req.user?.id;
     const assessment = await createSkillAssessment(req.body.profile, candidateId);
     res.json(assessment);
   } catch (error) {
@@ -204,4 +184,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  Gemini configured: ${isGeminiConfigured()}`);
   console.log(`  Model: ${geminiModel()}`);
 });
-

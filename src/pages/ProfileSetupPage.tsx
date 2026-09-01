@@ -16,10 +16,14 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
+import type { AuthUser } from '../api/authApi';
+import { validatePdfDocument } from '../utils/documentValidation';
 import type { LoginMethod } from './LoginPage';
 
 interface ProfileSetupPageProps {
   lastLoginMethod: LoginMethod | null;
+  authUser?: AuthUser | null;
+  initialProfile?: ProfileSetupResult | null;
   onBack: () => void;
   onComplete: (profile: ProfileSetupResult) => void;
 }
@@ -114,33 +118,44 @@ const selectClass =
   'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
 const cardClass = 'rounded-lg border border-white/10 bg-skillpath-night text-skillpath-cream shadow-panel';
 
-export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: ProfileSetupPageProps) {
-  const [firstName, setFirstName] = useState('Aarav');
-  const [lastName, setLastName] = useState('Mehta');
-  const [age, setAge] = useState('22');
+function splitName(name: string | null | undefined) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' '),
+  };
+}
+
+export function ProfileSetupPage({ lastLoginMethod, authUser = null, initialProfile = null, onBack, onComplete }: ProfileSetupPageProps) {
+  const initialName = splitName(initialProfile?.name || authUser?.fullName);
+  const [firstName, setFirstName] = useState(initialName.firstName);
+  const [lastName, setLastName] = useState(initialName.lastName);
+  const [age, setAge] = useState('');
   const [gender, setGender] = useState<Gender>('Prefer not to say');
-  const [email, setEmail] = useState('candidate@skillpath.com');
-  const [qualification, setQualification] = useState<Qualification>('Bachelor Degree');
-  const [collegeName, setCollegeName] = useState('Vellore Institute of Technology');
+  const [email, setEmail] = useState(initialProfile?.email || authUser?.email || '');
+  const [qualification, setQualification] = useState<Qualification>(initialProfile?.qualification || 'Bachelor Degree');
+  const [collegeName, setCollegeName] = useState('');
   const [customCollegeName, setCustomCollegeName] = useState('');
-  const [collegeCity, setCollegeCity] = useState('Bengaluru');
+  const [collegeCity, setCollegeCity] = useState('');
   const [degree, setDegree] = useState('B.Tech');
   const [branch, setBranch] = useState('Computer Science and Engineering');
   const [ugDegree, setUgDegree] = useState('B.Tech');
   const [ugBranch, setUgBranch] = useState('Computer Science and Engineering');
-  const [cgpa, setCgpa] = useState('8.2');
-  const [startYear, setStartYear] = useState('2021');
-  const [endYear, setEndYear] = useState('2025');
-  const [tenthPercentage, setTenthPercentage] = useState('88');
-  const [twelfthPercentage, setTwelfthPercentage] = useState('84');
+  const [cgpa, setCgpa] = useState('');
+  const [startYear, setStartYear] = useState('');
+  const [endYear, setEndYear] = useState('');
+  const [tenthPercentage, setTenthPercentage] = useState('');
+  const [twelfthPercentage, setTwelfthPercentage] = useState('');
   const [board, setBoard] = useState('CBSE');
-  const [domain, setDomain] = useState<Domain>('Full Stack Engineering');
-  const [interestedRoles, setInterestedRoles] = useState<string[]>(['Full Stack Developer Trainee']);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(['React', 'Node.js', 'TypeScript']);
+  const [domain, setDomain] = useState<Domain>(initialProfile?.domain || 'Full Stack Engineering');
+  const [interestedRoles, setInterestedRoles] = useState<string[]>(initialProfile?.interestedRoles || []);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(initialProfile?.claimedSkills || []);
   const [noExistingSkills, setNoExistingSkills] = useState(false);
   const [customSkill, setCustomSkill] = useState('');
-  const [resumeFileName, setResumeFileName] = useState('');
-  const [transcriptFileName, setTranscriptFileName] = useState('');
+  const [resumeFileName, setResumeFileName] = useState(initialProfile?.resumeFileName || '');
+  const [transcriptFileName, setTranscriptFileName] = useState(initialProfile?.transcriptFileName || '');
+  const [resumeFileError, setResumeFileError] = useState<string | null>(null);
+  const [transcriptFileError, setTranscriptFileError] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [locked, setLocked] = useState(false);
 
@@ -154,6 +169,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
   const validStudyDuration = isHighSchool || studyDuration === expectedDuration;
   const fieldsDisabled = locked || reviewOpen;
   const claimedSkills = noExistingSkills ? [] : selectedSkills;
+  const hasDocumentErrors = Boolean(resumeFileError || transcriptFileError);
 
   const completion = useMemo(() => {
     const commonFields = [firstName, lastName, age, gender, email, qualification, domain];
@@ -199,6 +215,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
     email.includes('@') &&
     interestedRoles.length > 0 &&
     (noExistingSkills || selectedSkills.length > 0) &&
+    !hasDocumentErrors &&
     (isHighSchool
       ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 && board.length > 0
       : resolvedCollegeName.trim().length > 1 &&
@@ -253,6 +270,19 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
     event.preventDefault();
     if (!canSubmit || locked) return;
     setReviewOpen(true);
+  };
+
+  const handlePdfSelection = (file: File | null | undefined, onAccepted: (fileName: string) => void, onError: (message: string | null) => void) => {
+    const validation = validatePdfDocument(file);
+    if (!validation.valid) {
+      onAccepted('');
+      onError(validation.message);
+      return false;
+    }
+
+    onAccepted(file?.name ?? '');
+    onError(null);
+    return true;
   };
 
   const profileResult: ProfileSetupResult = {
@@ -310,7 +340,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
               <div>
                 <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Profile Setup</h1>
                 <p className="mt-3 max-w-3xl text-base font-medium leading-7 text-skillpath-cream/70">
-                  Tell SkillPath who you are, what you studied, and where you want to grow.
+                  Complete your candidate profile once. SkillPath saves this setup securely and restores it the next time you sign in.
                 </p>
               </div>
               <button
@@ -352,7 +382,7 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
                     </select>
                   </Field>
                   <Field label="Email ID" className="sm:col-span-2">
-                    <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={fieldsDisabled} autoComplete="email" />
+                    <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={fieldsDisabled || Boolean(authUser?.email)} autoComplete="email" />
                   </Field>
                 </div>
               </section>
@@ -467,8 +497,23 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
               <section className={`${cardClass} xl:col-span-2`}>
                 <SectionHeader icon={<FileArrowUp className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Documents" />
                 <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
-                  <FileField label="Resume" fileName={resumeFileName} disabled={fieldsDisabled} onChange={setResumeFileName} />
-                  <FileField label="Academic transcript" fileName={transcriptFileName} disabled={fieldsDisabled} onChange={setTranscriptFileName} />
+                  <FileField
+                    label="Resume"
+                    fileName={resumeFileName}
+                    error={resumeFileError}
+                    disabled={fieldsDisabled}
+                    onChange={(file) => handlePdfSelection(file, setResumeFileName, setResumeFileError)}
+                  />
+                  <FileField
+                    label="Academic transcript"
+                    fileName={transcriptFileName}
+                    error={transcriptFileError}
+                    disabled={fieldsDisabled}
+                    onChange={(file) => handlePdfSelection(file, setTranscriptFileName, setTranscriptFileError)}
+                  />
+                  <div className="sm:col-span-2 rounded-md border border-white/12 bg-white/8 p-3 text-sm font-bold leading-6 text-skillpath-cream/72">
+                    PDF only. Accepted file type is <span className="font-black text-skillpath-cream">.pdf</span>; Word documents, images, and scanned image uploads are rejected before submission.
+                  </div>
                 </div>
               </section>
 
@@ -601,6 +646,12 @@ export function ProfileSetupPage({ lastLoginMethod, onBack, onComplete }: Profil
                     <StatusRow label="Domain and roles" done={interestedRoles.length > 0} />
                     <StatusRow label="Existing skills" done={noExistingSkills || selectedSkills.length > 0} />
                   </div>
+                  {hasDocumentErrors ? (
+                    <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
+                      <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
+                      Resolve document upload errors before review.
+                    </div>
+                  ) : null}
                   {!canSubmit ? (
                     <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
                       <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
@@ -643,18 +694,22 @@ function Field({ label, children, className = '' }: { label: string; children: R
   );
 }
 
-function FileField({ label, fileName, disabled, onChange }: { label: string; fileName: string; disabled: boolean; onChange: (fileName: string) => void }) {
+function FileField({ label, fileName, error, disabled, onChange }: { label: string; fileName: string; error: string | null; disabled: boolean; onChange: (file: File | null | undefined) => boolean }) {
   return (
     <label className="block rounded-md border border-white/12 bg-white/8 p-4">
       <span className="mb-3 block text-sm font-black text-skillpath-cream">{label}</span>
       <input
         className="block w-full text-sm font-bold text-skillpath-cream file:mr-3 file:rounded-md file:border-0 file:bg-skillpath-teal file:px-4 file:py-2 file:text-sm file:font-black file:text-skillpath-night"
         type="file"
-        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+        accept=".pdf,application/pdf"
         disabled={disabled}
-        onChange={(event) => onChange(event.target.files?.[0]?.name ?? '')}
+        onChange={(event) => {
+          const accepted = onChange(event.target.files?.[0]);
+          if (!accepted) event.target.value = '';
+        }}
       />
-      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional'}</span>
+      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional PDF'}</span>
+      {error ? <span className="mt-2 block text-sm font-black text-skillpath-danger">{error}</span> : null}
     </label>
   );
 }

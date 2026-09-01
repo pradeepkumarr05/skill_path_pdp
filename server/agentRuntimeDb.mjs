@@ -69,6 +69,8 @@ const combinedEvaluationSchema = {
   required: ['evaluation'] // nextQuestion might be omitted if assessment is complete
 };
 
+const evaluationSchema = combinedEvaluationSchema.properties.evaluation;
+
 // ── Utility ───────────────────────────────────────────────────────────────
 function nowIso() {
   return new Date().toISOString();
@@ -88,6 +90,17 @@ function levelFromScore(score) {
 }
 
 function sanitizeProfile(input) {
+  const normalizePdfFileName = (value, label) => {
+    const fileName = String(value || '').trim();
+    if (!fileName) return null;
+    if (!fileName.toLowerCase().endsWith('.pdf')) {
+      const err = new Error(`${label} must be a PDF file.`);
+      err.statusCode = 400;
+      throw err;
+    }
+    return fileName;
+  };
+
   return {
     name: String(input?.name || 'Candidate').trim() || 'Candidate',
     email: String(input?.email || '').trim(),
@@ -96,6 +109,8 @@ function sanitizeProfile(input) {
     assessmentDomain: SUPPORTED_DOMAIN,
     interestedRoles: Array.isArray(input?.interestedRoles) ? input.interestedRoles.map(String).filter(Boolean) : [],
     claimedSkills: normalizeClaimedSkills(input),
+    resumeFileName: normalizePdfFileName(input?.resumeFileName, 'Resume'),
+    transcriptFileName: normalizePdfFileName(input?.transcriptFileName, 'Academic transcript'),
   };
 }
 
@@ -118,78 +133,210 @@ function proctorLabel(type) {
 
 // ── Candidate Management ──────────────────────────────────────────────────
 
-/**
- * Upsert a candidate record by email. Returns candidate row.
- */
-export async function getOrCreateCandidate(profileInput) {
-  const profile = sanitizeProfile(profileInput);
+function publicCandidate(row) {
+  if (!row) return null;
 
-  if (!profile.email) {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    qualification: row.qualification,
+    selectedDomain: row.selected_domain,
+    assessmentDomain: row.assessment_domain,
+    interestedRoles: row.interested_roles || [],
+    claimedSkills: row.claimed_skills || [],
+    resumeFileName: row.resume_file_name || null,
+    transcriptFileName: row.transcript_file_name || null,
+  };
+}
+
+async function resolveUser(userId) {
+  if (!userId) return null;
+  const { rows } = await query('SELECT id, email, full_name FROM users WHERE id = $1 LIMIT 1', [userId]);
+  return rows[0] || null;
+}
+
+async function candidateIdForAuthSubject(authSubject) {
+  if (!authSubject) return null;
+  const { rows } = await query(
+    `SELECT id FROM candidates
+     WHERE id = $1 OR user_id = $1
+     LIMIT 1`,
+    [authSubject],
+  );
+  return rows[0]?.id || null;
+}
+
+async function assertCandidateAccess(ownerCandidateId, authSubject) {
+  if (!authSubject || ownerCandidateId === authSubject) return;
+
+  const { rows } = await query(
+    `SELECT id FROM candidates
+     WHERE id = $1 AND (id = $2 OR user_id = $2)
+     LIMIT 1`,
+    [ownerCandidateId, authSubject],
+  );
+
+  if (!rows.length) {
+    const err = new Error('Not authorized for this assessment.');
+    err.statusCode = 403;
+    throw err;
+  }
+}
+
+/**
+ * Upsert a candidate record and, when available, link it to the signed-in user.
+ */
+export async function getOrCreateCandidate(profileInput, userId) {
+  return upsertCandidate(profileInput, userId);
+}
+
+export async function upsertCandidate(profileInput, userId) {
+  const user = await resolveUser(userId);
+  const profile = sanitizeProfile(profileInput);
+  const email = user?.email || profile.email;
+  const name = profile.name === 'Candidate' && user?.full_name ? user.full_name : profile.name;
+
+  if (!email) {
     const err = new Error('Candidate email is required.');
     err.statusCode = 400;
     throw err;
   }
 
+  if (user?.id) {
+    const { rows: existingByUser } = await query('SELECT id FROM candidates WHERE user_id = $1 LIMIT 1', [user.id]);
+    if (existingByUser.length) {
+      const { rows } = await query(
+        `UPDATE candidates
+         SET name                 = $2,
+             email                = $3,
+             qualification        = $4,
+             selected_domain      = $5,
+             assessment_domain    = $6,
+             interested_roles     = $7,
+             claimed_skills       = $8,
+             resume_file_name     = $9,
+             transcript_file_name = $10,
+             updated_at           = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [
+          existingByUser[0].id,
+          name,
+          email,
+          profile.qualification,
+          profile.selectedDomain,
+          profile.assessmentDomain,
+          profile.interestedRoles,
+          profile.claimedSkills,
+          profile.resumeFileName,
+          profile.transcriptFileName,
+        ],
+      );
+      return rows[0];
+    }
+  }
+
   const { rows } = await query(
-    `INSERT INTO candidates (name, email, qualification, selected_domain, assessment_domain, interested_roles, claimed_skills)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO candidates
+       (user_id, name, email, qualification, selected_domain, assessment_domain, interested_roles, claimed_skills, resume_file_name, transcript_file_name)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (email) DO UPDATE SET
-       name              = EXCLUDED.name,
-       qualification     = EXCLUDED.qualification,
-       selected_domain   = EXCLUDED.selected_domain,
-       interested_roles  = EXCLUDED.interested_roles,
-       claimed_skills    = EXCLUDED.claimed_skills,
-       updated_at        = NOW()
+       user_id              = COALESCE(candidates.user_id, EXCLUDED.user_id),
+       name                 = EXCLUDED.name,
+       qualification        = EXCLUDED.qualification,
+       selected_domain      = EXCLUDED.selected_domain,
+       interested_roles     = EXCLUDED.interested_roles,
+       claimed_skills       = EXCLUDED.claimed_skills,
+       resume_file_name     = EXCLUDED.resume_file_name,
+       transcript_file_name = EXCLUDED.transcript_file_name,
+       updated_at           = NOW()
+     WHERE candidates.user_id IS NULL
+        OR candidates.user_id = EXCLUDED.user_id
+        OR EXCLUDED.user_id IS NULL
      RETURNING *`,
     [
-      profile.name,
-      profile.email,
+      user?.id || null,
+      name,
+      email,
       profile.qualification,
       profile.selectedDomain,
       profile.assessmentDomain,
       profile.interestedRoles,
       profile.claimedSkills,
+      profile.resumeFileName,
+      profile.transcriptFileName,
     ],
   );
+
+  if (!rows.length) {
+    const err = new Error('This email is already linked to another account.');
+    err.statusCode = 409;
+    throw err;
+  }
 
   return rows[0];
 }
 
-/**
- * Upsert candidate (simpler version that handles DB column names correctly).
- */
-export async function upsertCandidate(profileInput) {
-  const profile = sanitizeProfile(profileInput);
+export async function findCandidateForAuthUser(userId, email) {
+  const { rows } = await query(
+    `SELECT * FROM candidates
+     WHERE user_id = $1 OR lower(email) = lower($2)
+     ORDER BY CASE WHEN user_id = $1 THEN 0 ELSE 1 END, updated_at DESC
+     LIMIT 1`,
+    [userId, email || ''],
+  );
+  return rows[0] || null;
+}
 
-  if (!profile.email) {
-    const err = new Error('Candidate email is required.');
-    err.statusCode = 400;
-    throw err;
+export async function getCandidateDashboardForAuthUser(userId, email) {
+  const candidate = await findCandidateForAuthUser(userId, email);
+  if (!candidate) {
+    return { candidate: null, latestSkillResult: null, latestChatSession: null };
   }
 
-  const { rows } = await query(
-    `INSERT INTO candidates (name, email, qualification, selected_domain, assessment_domain, interested_roles, claimed_skills)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     ON CONFLICT (email) DO UPDATE SET
-       name              = EXCLUDED.name,
-       qualification     = EXCLUDED.qualification,
-       selected_domain   = EXCLUDED.selected_domain,
-       interested_roles  = EXCLUDED.interested_roles,
-       claimed_skills    = EXCLUDED.claimed_skills,
-       updated_at        = NOW()
-     RETURNING *`,
-    [
-      profile.name,
-      profile.email,
-      profile.qualification,
-      profile.selectedDomain,
-      profile.assessmentDomain,
-      profile.interestedRoles,
-      profile.claimedSkills,
-    ],
+  if (!candidate.user_id && userId) {
+    await query('UPDATE candidates SET user_id = $1, updated_at = NOW() WHERE id = $2', [userId, candidate.id]);
+    candidate.user_id = userId;
+  }
+
+  const { rows: skillRows } = await query(
+    `SELECT sar.*, sa.domain
+     FROM skill_assessment_results sar
+     JOIN skill_assessments sa ON sa.id = sar.assessment_id
+     WHERE sa.candidate_id = $1
+     ORDER BY sar.created_at DESC
+     LIMIT 1`,
+    [candidate.id],
   );
 
-  return rows[0];
+  const latestSkillResult = skillRows.length
+    ? {
+        assessmentId: skillRows[0].assessment_id,
+        domain: skillRows[0].domain,
+        status: 'submitted',
+        timedOut: skillRows[0].timed_out,
+        score: Number(skillRows[0].score),
+        level: skillRows[0].level,
+        correctCount: skillRows[0].correct_count,
+        total: skillRows[0].total,
+        results: skillRows[0].results || [],
+      }
+    : null;
+
+  const { rows: chatRows } = await query(
+    `SELECT id FROM chat_sessions
+     WHERE candidate_id = $1 AND status IN ('completed', 'skipped')
+     ORDER BY COALESCE(completed_at, created_at) DESC
+     LIMIT 1`,
+    [candidate.id],
+  );
+
+  return {
+    candidate: publicCandidate(candidate),
+    latestSkillResult,
+    latestChatSession: chatRows[0]?.id ? await loadPublicSession(chatRows[0].id) : null,
+  };
 }
 
 // ── Session Reconstruction from DB ───────────────────────────────────────
@@ -371,6 +518,7 @@ export async function startAgenticSession(profileInput, candidateId) {
   try {
     return await _dbStartAgenticSession(profileInput, candidateId);
   } catch (err) {
+    if (err.statusCode || err.status) throw err;
     console.warn('[agentRuntimeDb] DB fallback in startAgenticSession:', err.message);
     return await inMem.startAgenticSession(profileInput);
   }
@@ -379,10 +527,9 @@ export async function startAgenticSession(profileInput, candidateId) {
 async function _dbStartAgenticSession(profileInput, candidateId) {
   const profile = sanitizeProfile(profileInput);
 
-  // If no candidateId provided, upsert by email
-  let resolvedCandidateId = candidateId;
+  let resolvedCandidateId = await candidateIdForAuthSubject(candidateId);
   if (!resolvedCandidateId) {
-    const candidate = await upsertCandidate(profileInput);
+    const candidate = await upsertCandidate(profileInput, candidateId);
     resolvedCandidateId = candidate.id;
   }
 
@@ -559,12 +706,7 @@ export async function submitAgenticAnswer(sessionId, payload, candidateId) {
 
   const session = sessionRows[0];
 
-  // Authorization check
-  if (candidateId && session.candidate_id !== candidateId) {
-    const err = new Error('Not authorized to submit answers for this session.');
-    err.statusCode = 403;
-    throw err;
-  }
+  await assertCandidateAccess(session.candidate_id, candidateId);
 
   if (session.status !== 'active') {
     return loadPublicSession(sessionId);
@@ -888,11 +1030,7 @@ export async function recordProctorEvent(sessionId, payload, candidateId) {
     throw err;
   }
 
-  if (candidateId && rows[0].candidate_id !== candidateId) {
-    const err = new Error('Not authorized for this session.');
-    err.statusCode = 403;
-    throw err;
-  }
+  await assertCandidateAccess(rows[0].candidate_id, candidateId);
 
   if (rows[0].status !== 'active') {
     return loadPublicSession(sessionId);
@@ -1006,17 +1144,17 @@ export async function createSkillAssessment(profileInput, candidateId) {
   try {
     return await _dbCreateSkillAssessment(profileInput, candidateId);
   } catch (err) {
+    if (err.statusCode || err.status) throw err;
     console.warn('[agentRuntimeDb] DB fallback in createSkillAssessment:', err.message);
     return await inMem.createSkillAssessment(profileInput);
   }
 }
 
 async function _dbCreateSkillAssessment(profileInput, candidateId) {
-  // Upsert candidate if needed
-  let resolvedCandidateId = candidateId;
+  let resolvedCandidateId = await candidateIdForAuthSubject(candidateId);
   if (!resolvedCandidateId) {
     try {
-      const candidate = await upsertCandidate(profileInput);
+      const candidate = await upsertCandidate(profileInput, candidateId);
       resolvedCandidateId = candidate.id;
     } catch {
       // ignore
@@ -1049,6 +1187,7 @@ export async function recordSkillAssessmentProctorEvent(assessmentId, payload, c
   try {
     return await _dbRecordSkillAssessmentProctorEvent(assessmentId, payload, candidateId);
   } catch (err) {
+    if (err.statusCode || err.status) throw err;
     console.warn('[agentRuntimeDb] DB fallback in recordSkillAssessmentProctorEvent:', err.message);
     return inMem.recordSkillAssessmentProctorEvent(assessmentId, payload);
   }
@@ -1065,11 +1204,7 @@ async function _dbRecordSkillAssessmentProctorEvent(assessmentId, payload, candi
 
   const assessment = rows[0];
 
-  if (candidateId && assessment.candidate_id !== candidateId) {
-    const err = new Error('Not authorized for this assessment.');
-    err.statusCode = 403;
-    throw err;
-  }
+  await assertCandidateAccess(assessment.candidate_id, candidateId);
 
   if (assessment.status !== 'active') {
     return loadPublicSkillAssessment(assessmentId);
@@ -1109,6 +1244,7 @@ export async function submitSkillAssessment(assessmentId, answersInput, timedOut
   try {
     return await _dbSubmitSkillAssessment(assessmentId, answersInput, timedOut, candidateId);
   } catch (err) {
+    if (err.statusCode || err.status) throw err;
     console.warn('[agentRuntimeDb] DB fallback in submitSkillAssessment:', err.message);
     return inMem.submitSkillAssessment(assessmentId, answersInput, timedOut);
   }
@@ -1125,11 +1261,7 @@ async function _dbSubmitSkillAssessment(assessmentId, answersInput, timedOut = f
 
   const assessment = rows[0];
 
-  if (candidateId && assessment.candidate_id !== candidateId) {
-    const err = new Error('Not authorized for this assessment.');
-    err.statusCode = 403;
-    throw err;
-  }
+  await assertCandidateAccess(assessment.candidate_id, candidateId);
 
   if (assessment.status === 'terminated') {
     const err = new Error('Skill assessment was terminated by proctoring rules.');

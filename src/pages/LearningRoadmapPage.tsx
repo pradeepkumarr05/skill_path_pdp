@@ -17,7 +17,9 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
+import { CameraThumbnail } from '../components/CameraThumbnail';
 import { buildRoadmap } from '../data/roadmap';
+import { firstNameFromDisplayName } from '../utils/authSession';
 import type { AgenticSession, AssessmentAccessGrant, NotebookEntry, RoadmapSubtopic, SkillAssessmentResult } from '../types/assessment';
 import type { ProfileSetupResult } from './ProfileSetupPage';
 
@@ -58,6 +60,7 @@ export function LearningRoadmapPage({ profile, access, chatSession, skillResult,
   const completion = totalSubtopics ? Math.round((completedCount / totalSubtopics) * 100) : 0;
   const weakestTopic = roadmap[0];
   const active = Boolean(activeSubtopic && lessonPhase !== 'completed');
+  const firstName = firstNameFromDisplayName(profile.name);
 
   const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -288,9 +291,10 @@ export function LearningRoadmapPage({ profile, access, chatSession, skillResult,
           <section className="min-w-0">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Gap Detection and Learning Roadmap</h1>
+                <p className="text-sm font-black uppercase text-skillpath-teal">Welcome back, {firstName}</p>
+                <h1 className="mt-2 text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Learning Gap Engine</h1>
                 <p className="mt-3 max-w-4xl text-base font-medium leading-7 text-skillpath-cream/70">
-                  SkillPath combines the chatbot signal with the deterministic assessment result to rank weak points and build 10-minute recovery sessions.
+                  SkillPath combines the chatbot signal with the deterministic assessment result to rank weak points and build focused recovery sessions.
                 </p>
               </div>
               <button
@@ -401,51 +405,54 @@ export function LearningRoadmapPage({ profile, access, chatSession, skillResult,
           </section>
 
           <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <h2 className="text-2xl font-black">Gap summary</h2>
-              <div className="mt-5 space-y-3 text-sm">
-                <SummaryRow label="Candidate" value={profile.name} />
-                <SummaryRow label="OA score" value={`${skillResult.score}% (${skillResult.level.replace('_', ' ')})`} />
-                <SummaryRow label="Chatbot score" value={chatSession?.aggregate ? `${chatSession.aggregate.score}% (${chatSession.aggregate.level.replace('_', ' ')})` : 'Skipped or pending'} />
-                <SummaryRow label="Roadmap load" value={`${roadmap.length} topics, ${totalSubtopics} subtopics`} />
-              </div>
+            <div className="space-y-5">
+              <CameraThumbnail stream={access.cameraStream} active={access.cameraGranted} detail="Required before live recovery sessions" />
+              <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
+                <h2 className="text-2xl font-black">Gap summary</h2>
+                <div className="mt-5 space-y-3 text-sm">
+                  <SummaryRow label="Candidate" value={profile.name} />
+                  <SummaryRow label="OA score" value={`${skillResult.score}% (${skillResult.level.replace('_', ' ')})`} />
+                  <SummaryRow label="Chatbot score" value={chatSession?.aggregate ? `${chatSession.aggregate.score}% (${chatSession.aggregate.level.replace('_', ' ')})` : 'Skipped or pending'} />
+                  <SummaryRow label="Roadmap load" value={`${roadmap.length} topics, ${totalSubtopics} subtopics`} />
+                </div>
 
-              <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                <div className="mb-3 flex items-center gap-2">
-                  <LockKey className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Session proctoring</p>
+                <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
+                  <div className="mb-3 flex items-center gap-2">
+                    <LockKey className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
+                    <p className="text-sm font-black">Session proctoring</p>
+                  </div>
+                  <div className="grid gap-2 text-xs font-black">
+                    <StatusRow label="Camera" done={access.cameraGranted} />
+                    <StatusRow label="Microphone" done={access.microphoneGranted} />
+                    <StatusRow label="Screen + full-screen" done={access.screenGranted && access.fullscreenGranted} />
+                  </div>
                 </div>
-                <div className="grid gap-2 text-xs font-black">
-                  <StatusRow label="Camera" done={access.cameraGranted} />
-                  <StatusRow label="Microphone" done={access.microphoneGranted} />
-                  <StatusRow label="Screen + full-screen" done={access.screenGranted && access.fullscreenGranted} />
-                </div>
-              </div>
 
-              <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                <div className="mb-3 flex items-center gap-2">
-                  <Notebook className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Notebooks</p>
+                <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Notebook className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
+                    <p className="text-sm font-black">Notebooks</p>
+                  </div>
+                  <div className="space-y-3">
+                    {notebooks.length ? (
+                      notebooks.map((entry) => (
+                        <article key={entry.id} className="rounded-md bg-white/8 p-3">
+                          <p className="text-sm font-black">{entry.title}</p>
+                          <p className="mt-1 text-xs font-bold text-skillpath-cream/58">{entry.skill} · {entry.completedAt}</p>
+                          <ul className="mt-2 space-y-1 text-xs font-bold leading-5 text-skillpath-cream/78">
+                            {entry.notes.slice(0, 3).map((note) => (
+                              <li key={note}>{note}</li>
+                            ))}
+                          </ul>
+                        </article>
+                      ))
+                    ) : (
+                      <p className="rounded-md bg-white/8 p-3 text-sm font-bold text-skillpath-cream/70">Completed sessions appear here.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {notebooks.length ? (
-                    notebooks.map((entry) => (
-                      <article key={entry.id} className="rounded-md bg-white/8 p-3">
-                        <p className="text-sm font-black">{entry.title}</p>
-                        <p className="mt-1 text-xs font-bold text-skillpath-cream/58">{entry.skill} · {entry.completedAt}</p>
-                        <ul className="mt-2 space-y-1 text-xs font-bold leading-5 text-skillpath-cream/78">
-                          {entry.notes.slice(0, 3).map((note) => (
-                            <li key={note}>{note}</li>
-                          ))}
-                        </ul>
-                      </article>
-                    ))
-                  ) : (
-                    <p className="rounded-md bg-white/8 p-3 text-sm font-bold text-skillpath-cream/70">Completed sessions appear here.</p>
-                  )}
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </aside>
         </div>
       </div>

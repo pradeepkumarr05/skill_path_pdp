@@ -12,6 +12,7 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
+import { CameraThumbnail } from '../components/CameraThumbnail';
 import { createSkillAssessment, recordSkillAssessmentProctorEvent, submitSkillAssessment } from '../api/skillpathApi';
 import type { AgenticSession, AssessmentAccessGrant, SkillAssessment, SkillAssessmentResult } from '../types/assessment';
 import type { ProfileSetupResult } from './ProfileSetupPage';
@@ -340,47 +341,50 @@ export function SkillAssessmentPage({ profile, access, chatSession, onBack, onCo
           </section>
 
           <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <h2 className="text-2xl font-black">Assessment brief</h2>
-              <div className="mt-5 space-y-3 text-sm">
-                <SummaryRow label="Candidate" value={profile.name} />
-                <SummaryRow label="Selected domain" value={profile.domain} />
-                <SummaryRow label="Prototype domain" value={assessment?.domain ?? 'Full Stack Engineering'} />
-                <SummaryRow label="Chatbot stage" value={profile.claimedSkills.length ? chatSession?.status ?? 'Required before this stage' : 'Skipped: no claimed skills'} />
-                <SummaryRow label="Completion" value={assessment ? `${answeredCount}/${assessment.items.length} answered` : 'Preparing'} />
-              </div>
-
-              <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                <p className="text-sm font-black text-skillpath-teal">Uniform coverage</p>
-                <div className="mt-3 grid gap-2">
-                  {skillCounts.map(([skill, count]) => (
-                    <div key={skill} className="flex items-center justify-between gap-3 rounded-md bg-white/8 px-3 py-2 text-xs font-black">
-                      <span>{skill}</span>
-                      <span>{count}</span>
-                    </div>
-                  ))}
+            <div className="space-y-5">
+              <CameraThumbnail stream={access.cameraStream} active={access.cameraGranted} detail="Visible throughout the MCQ assessment" />
+              <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
+                <h2 className="text-2xl font-black">Assessment brief</h2>
+                <div className="mt-5 space-y-3 text-sm">
+                  <SummaryRow label="Candidate" value={profile.name} />
+                  <SummaryRow label="Selected domain" value={profile.domain} />
+                  <SummaryRow label="Prototype domain" value={assessment?.domain ?? 'Full Stack Engineering'} />
+                  <SummaryRow label="Chatbot stage" value={profile.claimedSkills.length ? chatSession?.status ?? 'Required before this stage' : 'Skipped: no claimed skills'} />
+                  <SummaryRow label="Completion" value={assessment ? `${answeredCount}/${assessment.items.length} answered` : 'Preparing'} />
                 </div>
-              </div>
 
-              {chatSession?.aggregate ? (
                 <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                  <p className="text-sm font-black text-skillpath-teal">Chatbot score</p>
-                  <p className="mt-1 text-3xl font-black">{chatSession.aggregate.score}%</p>
-                  <p className="mt-1 text-sm font-bold text-skillpath-cream/70">{chatSession.aggregate.level.replace('_', ' ')}</p>
+                  <p className="text-sm font-black text-skillpath-teal">Uniform coverage</p>
+                  <div className="mt-3 grid gap-2">
+                    {skillCounts.map(([skill, count]) => (
+                      <div key={skill} className="flex items-center justify-between gap-3 rounded-md bg-white/8 px-3 py-2 text-xs font-black">
+                        <span>{skill}</span>
+                        <span>{count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : null}
 
-              {result ? (
-                <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                  <p className="text-sm font-black text-skillpath-teal">OA result</p>
-                  <p className="mt-1 text-3xl font-black">{result.score}%</p>
-                  <p className="mt-1 text-sm font-bold text-skillpath-cream/70">
-                    {result.correctCount}/{result.total} correct · {result.level.replace('_', ' ')}
-                  </p>
-                  {result.timedOut ? <p className="mt-3 text-sm font-bold text-skillpath-citron">Submitted automatically when time expired.</p> : null}
-                </div>
-              ) : null}
-            </section>
+                {chatSession?.aggregate ? (
+                  <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
+                    <p className="text-sm font-black text-skillpath-teal">Chatbot score</p>
+                    <p className="mt-1 text-3xl font-black">{chatSession.aggregate.score}%</p>
+                    <p className="mt-1 text-sm font-bold text-skillpath-cream/70">{chatSession.aggregate.level.replace('_', ' ')}</p>
+                  </div>
+                ) : null}
+
+                {result ? (
+                  <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
+                    <p className="text-sm font-black text-skillpath-teal">OA result</p>
+                    <p className="mt-1 text-3xl font-black">{result.score}%</p>
+                    <p className="mt-1 text-sm font-bold text-skillpath-cream/70">
+                      {result.correctCount}/{result.total} correct · {result.level.replace('_', ' ')}
+                    </p>
+                    {result.timedOut ? <p className="mt-3 text-sm font-bold text-skillpath-citron">Submitted automatically when time expired.</p> : null}
+                  </div>
+                ) : null}
+              </section>
+            </div>
           </aside>
         </div>
       </div>

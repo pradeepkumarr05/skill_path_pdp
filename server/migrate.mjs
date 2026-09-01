@@ -7,11 +7,14 @@
 import { query } from './db.mjs';
 
 const DDL = `
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- ────────────────────────────────────────────────────────────────────────────
 -- CANDIDATES
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS candidates (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           UUID,
   name              TEXT NOT NULL DEFAULT 'Candidate',
   email             TEXT NOT NULL UNIQUE,
   qualification     TEXT NOT NULL DEFAULT '',
@@ -19,11 +22,14 @@ CREATE TABLE IF NOT EXISTS candidates (
   assessment_domain TEXT NOT NULL DEFAULT 'Full Stack Engineering',
   interested_roles  TEXT[] NOT NULL DEFAULT '{}',
   claimed_skills    TEXT[] NOT NULL DEFAULT '{}',
+  resume_file_name  TEXT,
+  transcript_file_name TEXT,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_candidates_user_id ON candidates(user_id) WHERE user_id IS NOT NULL;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- CHAT SESSIONS (Chatbot Agentic Assessment)
@@ -211,6 +217,26 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS github_access_token_enc TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS users_github_id_idx ON users (github_id) WHERE github_id IS NOT NULL;
 
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS resume_file_name TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS transcript_file_name TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_candidates_user_id ON candidates(user_id) WHERE user_id IS NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'candidates_user_id_fkey'
+      AND conrelid = 'candidates'::regclass
+  ) THEN
+    ALTER TABLE candidates
+      ADD CONSTRAINT candidates_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+  END IF;
+END;
+$$;
+
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_have_a_login_method;
 ALTER TABLE users ADD CONSTRAINT users_have_a_login_method
   CHECK (password_hash IS NOT NULL OR google_id IS NOT NULL OR github_id IS NOT NULL);
@@ -264,7 +290,9 @@ export async function runMigrations() {
     console.log('[migrate] ✓ All tables created / already exist.');
     return true;
   } catch (err) {
-    console.error('[migrate] ✗ Migration failed:', err.message);
+    console.error('[migrate] ✗ Migration failed:', err.message || err.code || err);
+    if (err.detail) console.error('[migrate] detail:', err.detail);
+    if (err.position) console.error('[migrate] position:', err.position);
     return false;
   }
 }

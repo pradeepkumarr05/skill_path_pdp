@@ -36,11 +36,13 @@ export const registerSchema = z.object({
   email,
   password,
   fullName,
+  rememberDevice: z.boolean().optional(),
 });
 
 export const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Password is required.').max(256),
+  rememberDevice: z.boolean().optional(),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -51,6 +53,25 @@ export const resetPasswordSchema = z.object({
   email,
   otp,
   newPassword: password,
+});
+
+const pdfFileName = z
+  .string()
+  .trim()
+  .max(260)
+  .regex(/\.pdf$/i, 'Only PDF files are accepted.')
+  .optional()
+  .or(z.literal(''));
+
+export const profileSetupSchema = z.object({
+  name: z.string().trim().min(2, 'Enter your full name.').max(120),
+  email,
+  qualification: z.string().trim().min(2).max(80),
+  domain: z.string().trim().min(2).max(100),
+  interestedRoles: z.array(z.string().trim().min(1).max(100)).min(1, 'Select at least one role.').max(12),
+  claimedSkills: z.array(z.string().trim().min(1).max(80)).max(30),
+  resumeFileName: pdfFileName,
+  transcriptFileName: pdfFileName,
 });
 
 /**

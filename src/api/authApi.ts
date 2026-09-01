@@ -1,9 +1,28 @@
+import type { AgenticSession, SkillAssessmentResult } from '../types/assessment';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
+
+export interface AuthCandidateProfile {
+  id: string;
+  name: string;
+  email: string;
+  qualification: string;
+  selectedDomain: string;
+  assessmentDomain: string;
+  interestedRoles: string[];
+  claimedSkills: string[];
+  resumeFileName?: string | null;
+  transcriptFileName?: string | null;
+}
 
 export interface AuthUser {
   id: string;
   email: string;
   fullName?: string | null;
+  profileComplete: boolean;
+  candidate?: AuthCandidateProfile | null;
+  latestSkillResult?: SkillAssessmentResult | null;
+  latestChatSession?: AgenticSession | null;
 }
 
 export class AuthApiError extends Error {
@@ -73,8 +92,8 @@ async function request<T>(path: string, options: RequestInit = {}, withCsrf = fa
   return body as T;
 }
 
-export async function login(email: string, password: string): Promise<{ user: AuthUser }> {
-  return request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }, true);
+export async function login(email: string, password: string, rememberDevice = true): Promise<{ user: AuthUser; token?: string }> {
+  return request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password, rememberDevice }) }, true);
 }
 
 export async function loginWithGoogle(idToken: string): Promise<{ user: AuthUser }> {
@@ -85,8 +104,22 @@ export async function register(
   email: string,
   password: string,
   fullName?: string,
+  rememberDevice = true,
 ): Promise<{ user: AuthUser }> {
-  return request('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, fullName }) }, true);
+  return request('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, fullName, rememberDevice }) }, true);
+}
+
+export async function saveProfile(profile: {
+  name: string;
+  email: string;
+  qualification: string;
+  domain: string;
+  interestedRoles: string[];
+  claimedSkills: string[];
+  resumeFileName?: string;
+  transcriptFileName?: string;
+}): Promise<{ user: AuthUser }> {
+  return request('/api/auth/profile', { method: 'POST', body: JSON.stringify(profile) }, true);
 }
 
 export async function requestPasswordReset(email: string): Promise<{ message: string }> {

@@ -12,6 +12,7 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
+import { CameraThumbnail } from '../components/CameraThumbnail';
 import { recordProctorEvent, startAgentSession, submitAgentAnswer } from '../api/skillpathApi';
 import type { AssessmentAccessGrant, AgenticSession } from '../types/assessment';
 import type { ProfileSetupResult } from './ProfileSetupPage';
@@ -323,36 +324,39 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
           </section>
 
           <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <h2 className="text-2xl font-black">Agent state</h2>
-              <div className="mt-5 space-y-3 text-sm">
-                <SummaryRow label="Candidate" value={profile.name} />
-                <SummaryRow label="Domain" value={session?.assessmentDomain ?? 'Full Stack Engineering'} />
-                <SummaryRow label="Status" value={session?.status ?? 'Starting'} />
-                <SummaryRow label="Current skill" value={activeQuestion?.skill ?? 'None'} />
-                <SummaryRow label="Current difficulty" value={activeQuestion?.difficulty ?? 'None'} />
-              </div>
+            <div className="space-y-5">
+              <CameraThumbnail stream={access.cameraStream} active={access.cameraGranted} detail="Visible throughout the chatbot assessment" />
+              <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
+                <h2 className="text-2xl font-black">Agent state</h2>
+                <div className="mt-5 space-y-3 text-sm">
+                  <SummaryRow label="Candidate" value={profile.name} />
+                  <SummaryRow label="Domain" value={session?.assessmentDomain ?? 'Full Stack Engineering'} />
+                  <SummaryRow label="Status" value={session?.status ?? 'Starting'} />
+                  <SummaryRow label="Current skill" value={activeQuestion?.skill ?? 'None'} />
+                  <SummaryRow label="Current difficulty" value={activeQuestion?.difficulty ?? 'None'} />
+                </div>
 
-              <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                <div className="mb-3 flex items-center gap-2">
-                  <LockKey className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Claimed skills</p>
+                <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
+                  <div className="mb-3 flex items-center gap-2">
+                    <LockKey className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
+                    <p className="text-sm font-black">Claimed skills</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.claimedSkills.map((skill) => (
+                      <span key={skill} className="rounded-md border border-white/14 bg-white/8 px-2.5 py-1.5 text-xs font-black">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {profile.claimedSkills.map((skill) => (
-                    <span key={skill} className="rounded-md border border-white/14 bg-white/8 px-2.5 py-1.5 text-xs font-black">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
 
-              {session?.status === 'terminated' ? (
-                <div className="mt-5 rounded-md border border-skillpath-danger bg-white p-4 text-sm font-bold leading-6 text-skillpath-danger">
-                  {session.reason || 'Assessment terminated.'}
-                </div>
-              ) : null}
-            </section>
+                {session?.status === 'terminated' ? (
+                  <div className="mt-5 rounded-md border border-skillpath-danger bg-white p-4 text-sm font-bold leading-6 text-skillpath-danger">
+                    {session.reason || 'Assessment terminated.'}
+                  </div>
+                ) : null}
+              </section>
+            </div>
           </aside>
         </div>
       </div>

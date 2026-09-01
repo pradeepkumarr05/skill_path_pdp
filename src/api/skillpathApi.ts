@@ -1,11 +1,11 @@
 /**
  * src/api/skillpathApi.ts
- * Frontend API client with JWT authentication.
+ * Frontend API client for protected assessment routes.
  *
  * Auth flow:
- *  1. login(profile) → stores token in module-level var + sessionStorage
- *  2. All subsequent calls attach Bearer token header automatically
- *  3. logout() clears the stored token
+ *  1. Account login/register stores httpOnly session cookies via authApi.
+ *  2. Assessment requests include same-origin credentials automatically.
+ *  3. Bearer token storage remains as a fallback for API tests and legacy clients.
  */
 import type { AgenticSession, SkillAssessment, SkillAssessmentResult } from '../types/assessment';
 import type { ProfileSetupResult } from '../pages/ProfileSetupPage';
@@ -55,6 +55,7 @@ function authHeaders(): Record<string, string> {
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders(),
@@ -73,6 +74,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path, {
     method: 'GET',
+    credentials: 'same-origin',
     headers: {
       ...authHeaders(),
     },
@@ -84,40 +86,6 @@ async function getJson<T>(path: string): Promise<T> {
   }
 
   return payload as T;
-}
-
-// ── Auth APIs ─────────────────────────────────────────────────────────────
-
-export interface LoginResponse {
-  token: string;
-  candidate: {
-    id: string;
-    name: string;
-    email: string;
-    qualification: string;
-    selectedDomain: string;
-    assessmentDomain: string;
-    interestedRoles: string[];
-    claimedSkills: string[];
-  };
-}
-
-/**
- * Login / register a candidate by email.
- * Stores the returned JWT for subsequent calls.
- */
-export async function login(profile: ProfileSetupResult): Promise<LoginResponse> {
-  const response = await postJson<LoginResponse>('/api/auth/login', {
-    email: profile.email,
-    name: profile.name,
-    qualification: profile.qualification,
-    domain: profile.domain,
-    interestedRoles: profile.interestedRoles,
-    claimedSkills: profile.claimedSkills,
-  });
-
-  storeToken(response.token);
-  return response;
 }
 
 export function logout() {

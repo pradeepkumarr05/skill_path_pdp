@@ -37,6 +37,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
 type ForgotStep = 'request' | 'verify';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const REMEMBERED_PROFILE_KEY = 'skillpath_remembered_profile';
 
 /**
  * Renders Google's own "Sign in with Google" button via the Google
@@ -118,6 +119,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
+  const [rememberedName, setRememberedName] = useState('');
   const [error, setError] = useState<string | null>(initialError);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,6 +138,37 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
   useEffect(() => {
     if (initialError) setError(initialError);
   }, [initialError]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(REMEMBERED_PROFILE_KEY) || '{}') as { email?: string; name?: string };
+      if (stored.email) setEmail(stored.email);
+      if (stored.name) setRememberedName(stored.name);
+    } catch {
+      localStorage.removeItem(REMEMBERED_PROFILE_KEY);
+    }
+  }, []);
+
+  const rememberAuthenticatedUser = (user: AuthUser) => {
+    try {
+      if (!rememberDevice) {
+        localStorage.removeItem(REMEMBERED_PROFILE_KEY);
+        return;
+      }
+
+      const displayName = user.candidate?.name || user.fullName || user.email;
+      localStorage.setItem(
+        REMEMBERED_PROFILE_KEY,
+        JSON.stringify({
+          email: user.email,
+          name: displayName,
+        }),
+      );
+      setRememberedName(displayName);
+    } catch {
+      // Remembered greetings are convenience only; auth still relies on server sessions.
+    }
+  };
 
   const switchMode = (nextMode: Mode) => {
     setMode(nextMode);
@@ -192,7 +225,8 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
     setIsSubmitting(true);
 
     try {
-      const { user } = await login(email.trim(), password);
+      const { user } = await login(email.trim(), password, rememberDevice);
+      rememberAuthenticatedUser(user);
       onAuthenticated('email', user);
     } catch (err) {
       if (err instanceof AuthApiError) {
@@ -225,7 +259,8 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
       // The register endpoint creates the account AND signs the user in
       // (it issues the same session cookies login does), so there's no
       // separate "now log in" step needed.
-      const { user } = await register(email.trim(), password, fullName.trim() || undefined);
+      const { user } = await register(email.trim(), password, fullName.trim() || undefined, rememberDevice);
+      rememberAuthenticatedUser(user);
       onAuthenticated('email', user);
     } catch (err) {
       if (err instanceof AuthApiError) {
@@ -244,6 +279,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
       setIsSubmitting(true);
       try {
         const { user } = await loginWithGoogle(idToken);
+        rememberAuthenticatedUser(user);
         onAuthenticated('google', user);
       } catch (err) {
         if (err instanceof AuthApiError) {
@@ -337,6 +373,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
 
   const isSignUp = mode === 'signup';
   const isForgot = mode === 'forgot';
+  const welcomeName = rememberedName.trim().split(/\s+/)[0] || '';
 
   return (
     <main className="auth-backdrop min-h-screen px-4 py-5 text-skillpath-cream sm:px-6 lg:px-8">
@@ -353,14 +390,14 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
 
             <motion.div className="max-w-[680px]" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
               <h1 className="text-5xl font-black leading-[0.95] text-skillpath-cream sm:text-6xl lg:text-7xl">
-                Start with verified access. Build toward verified readiness.
+                Learning Gap Engine for verified readiness.
               </h1>
               <p className="mt-6 max-w-xl text-lg font-medium leading-8 text-skillpath-cream/72">
                 {isForgot
                   ? 'Reset your password to get back into your profile, skills, assessments, and learning path.'
                   : isSignUp
-                    ? 'Create an account to unlock your profile, skills, assessments, learning path, and final readiness review.'
-                    : 'Sign in to continue into your profile, skills, assessments, learning path, and final readiness review.'}
+                    ? 'Create a professional candidate account. Your profile setup is saved and reused for future assessments.'
+                    : 'Sign in to return to your saved profile, latest assessment results, and learning-gap dashboard.'}
               </p>
             </motion.div>
 
@@ -370,7 +407,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
                   <div>
                     <p className="text-sm font-black text-skillpath-night">Entry progress</p>
                     <p className="text-sm font-medium text-skillpath-muted">
-                      {isSignUp ? 'Account creation unlocks profile setup.' : 'Login unlocks profile setup.'}
+                      {isSignUp ? 'Account creation unlocks one-time profile setup.' : 'Login opens your saved learning-gap dashboard when setup is complete.'}
                     </p>
                   </div>
                   <CheckCircle className="h-6 w-6 text-skillpath-teal" weight="fill" aria-hidden="true" />
@@ -527,8 +564,13 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
                 <div className="mb-8 flex items-start justify-between gap-4">
                   <div>
                     <h2 className="mt-2 text-4xl font-black tracking-normal text-skillpath-night">
-                      {isSignUp ? 'Create account' : 'Sign in'}
+                      {isSignUp ? 'Create account' : welcomeName ? `Welcome back, ${welcomeName}` : 'Welcome back'}
                     </h2>
+                    <p className="mt-2 text-sm font-bold leading-6 text-skillpath-muted">
+                      {isSignUp
+                        ? 'Use a work-ready email and a strong password to create your SkillPath account.'
+                        : 'Continue to your saved setup, assessment status, and learning-gap engine.'}
+                    </p>
                     <div className="mt-2 inline-flex rounded-md border border-skillpath-line bg-skillpath-cream p-1 text-sm font-black">
                       <button
                         type="button"
@@ -625,6 +667,18 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
                         maxLength={256}
                       />
                     </label>
+                  ) : null}
+
+                  {isSignUp ? (
+                    <label className="inline-flex items-center gap-2 text-sm font-bold text-skillpath-muted">
+                      <input
+                        className="h-4 w-4 rounded border-skillpath-line accent-skillpath-teal"
+                        type="checkbox"
+                        checked={rememberDevice}
+                        onChange={(event) => setRememberDevice(event.target.checked)}
+                      />
+                      Keep this device signed in
+                    </label>
                   ) : (
                     <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <label className="inline-flex items-center gap-2 font-bold text-skillpath-muted">
@@ -634,7 +688,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
                           checked={rememberDevice}
                           onChange={(event) => setRememberDevice(event.target.checked)}
                         />
-                        Keep me signed in
+                        Keep this device signed in
                       </label>
                       <button
                         className="text-left font-black text-skillpath-night underline decoration-skillpath-teal decoration-2 underline-offset-4 hover:text-skillpath-teal"
@@ -662,7 +716,7 @@ export function LoginPage({ onAuthenticated, initialError = null }: LoginPagePro
                     type="submit"
                     disabled={!canSubmit}
                   >
-                    {isSubmitting ? (isSignUp ? 'Creating account…' : 'Signing in…') : isSignUp ? 'Create account' : 'Continue'}
+                    {isSubmitting ? (isSignUp ? 'Creating account…' : 'Signing in…') : isSignUp ? 'Create account' : 'Sign in'}
                     <ArrowRight className="h-5 w-5" weight="bold" aria-hidden="true" />
                   </button>
                 </form>

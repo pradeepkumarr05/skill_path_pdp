@@ -11,7 +11,11 @@
     "db:migrate": "node server/db/migrate.mjs",
     "setup": "node server/migrate.mjs",
     "test:api": "node server/test.mjs",
-    "test:unit": "node server/test-state-machine.mjs",
+    "test:e2e": "node server/test.mjs",
+    "test:state-machine": "node server/test-state-machine.mjs",
+    "test:unit": "vitest run --reporter=verbose && node server/test-state-machine.mjs",
+    "test": "npm run test:unit && npm run typecheck && npm run build",
+    "screenshots": "node scripts/capture-screenshots.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit"
@@ -37,6 +41,9 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
@@ -47,9 +54,12 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.62.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^4.1.11"
   }
 }
