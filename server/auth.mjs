@@ -36,12 +36,10 @@ function loadLocalEnv() {
 loadLocalEnv();
 // ───────────────────────────────────────────────────────────────────────────
 
-const JWT_SECRET = process.env.JWT_SECRET || 'skillpath-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-if (JWT_SECRET === 'skillpath-dev-secret-change-in-production') {
-  console.warn('[auth] WARNING: Using default JWT_SECRET. Set JWT_SECRET in .env for production.');
-}
+if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('Set JWT_SECRET to a random value of at least 32 characters.');
 
 /**
  * Sign a JWT token for the given candidateId.
@@ -61,7 +59,7 @@ export function signToken(candidateId) {
  * @throws If token is invalid or expired
  */
 export function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 }
 
 /**

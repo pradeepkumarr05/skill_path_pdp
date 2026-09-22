@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { CameraMonitor } from '../components/CameraMonitor';
 import {
   ArrowLeft,
   ArrowRight,
@@ -250,6 +251,7 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
 
   return (
     <main className="min-h-screen bg-skillpath-night text-skillpath-cream select-none">
+      <CameraMonitor access={access} active={session?.status === 'active'} report={reportProctorEvent} />
       {/* Non-blocking fullscreen nudge — the real enforcement happens server-side via proctor events */}
       {!isFullscreen && session?.status === 'active' && (
         <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-skillpath-danger px-4 py-2 text-sm font-black text-white">
@@ -269,9 +271,6 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
         <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-4">
             <SkillPathLogo />
-            <span className="hidden rounded-full border border-skillpath-teal/40 bg-skillpath-teal/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-skillpath-teal sm:inline-flex">
-              Proctored session
-            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs font-black sm:grid-cols-4 lg:min-w-[560px]">
             <ProctorChip label="Camera" active={access.cameraGranted} />
@@ -466,13 +465,13 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
 
       {/* ── Floating live camera proctoring preview ── */}
       {session?.status === 'active' && (
-        <div className="fixed bottom-5 right-5 z-30 w-44 overflow-hidden rounded-lg border-2 border-skillpath-teal/60 bg-skillpath-night shadow-panel">
+        <div className="mx-4 my-4 w-44 overflow-hidden rounded-lg border border-skillpath-teal/60 bg-skillpath-night shadow-panel lg:fixed lg:bottom-5 lg:right-5 lg:z-30">
           <div className="flex items-center gap-1.5 bg-skillpath-night/95 px-2 py-1">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-skillpath-danger opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-skillpath-danger"></span>
             </span>
-            <span className="text-[10px] font-black uppercase tracking-wide text-skillpath-cream/80">Recording</span>
+            <span className="text-xs font-bold text-skillpath-cream/80">Live camera</span>
           </div>
           {access.cameraStream ? (
             <video ref={cameraVideoRef} autoPlay muted playsInline className="aspect-video w-full scale-x-[-1] object-cover" />

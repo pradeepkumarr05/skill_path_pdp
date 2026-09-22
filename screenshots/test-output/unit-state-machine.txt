@@ -1,0 +1,52 @@
+
+1. Score clamping
+  ✓ clamp 0 stays 0
+  ✓ clamp 100 stays 100
+  ✓ clamp -5 becomes 0
+  ✓ clamp 105 becomes 100
+  ✓ clamp NaN becomes 0
+  ✓ clamp 72.6 rounds to 73
+  ✓ clamp 72.4 rounds to 72
+
+2. Level thresholds
+  ✓ score 85 → strong
+  ✓ score 100 → strong
+  ✓ score 84 → job_ready
+  ✓ score 70 → job_ready
+  ✓ score 69 → developing
+  ✓ score 45 → developing
+  ✓ score 44 → novice
+  ✓ score 0 → novice
+
+3. Final skill score (45% medium + 55% hard)
+  ✓ medium=80, hard=90 → 86
+  ✓ medium=75, hard=50 → 61
+  ✓ medium=50, hard=0 → 23
+  ✓ medium=100, hard=100 → 100
+  ✓ medium=0, hard=0 → 0
+
+4. Aggregate score (average of skill finalScores)
+  ✓ 1 skill at 80 → 80
+  ✓ 2 skills: 80+60 → 70
+  ✓ 3 skills: 90+70+50 → 70
+  ✓ empty array → 0
+
+5. Proctor warning limit logic
+  ✓ 1 warning: not terminated
+  ✓ 2 warnings: not terminated
+  ✓ 3 warnings: terminated
+
+6. MCQ grading logic
+  ✓ 22/22 correct → 100 strong
+  ✓ 0/22 correct → 0 novice
+  ✓ 16/22 correct → 73 job_ready
+  ✓ 10/22 correct → 45 developing
+
+7. Answer timeout detection
+  ✓ past dueAt → timed out
+  ✓ future dueAt → not timed out
+
+───────────────────────────────────────────────────────
+Results: 33 passed  0 failed
+
+All unit tests passed! ✓

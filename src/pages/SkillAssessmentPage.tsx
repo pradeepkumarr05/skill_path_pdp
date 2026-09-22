@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { CameraMonitor } from '../components/CameraMonitor';
 import {
   ArrowLeft,
   Brain,
@@ -206,6 +207,7 @@ export function SkillAssessmentPage({ profile, access, chatSession, onBack, onCo
 
   return (
     <main className="min-h-screen bg-skillpath-night p-4 text-skillpath-cream sm:p-5 lg:p-6 select-none">
+      <CameraMonitor access={access} active={assessment?.status === 'active' && !result} report={reportProctorEvent} />
       <div className="flex min-h-[calc(100vh-32px)] w-full flex-col rounded-lg border border-white/10 bg-skillpath-night shadow-panel sm:min-h-[calc(100vh-40px)] lg:min-h-[calc(100vh-48px)]">
         <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center justify-between gap-4">
@@ -395,13 +397,13 @@ export function SkillAssessmentPage({ profile, access, chatSession, onBack, onCo
 
       {/* ── Floating live camera proctoring preview ── */}
       {assessment?.status === 'active' && !result && (
-        <div className="fixed bottom-5 right-5 z-30 w-44 overflow-hidden rounded-lg border-2 border-skillpath-teal/60 bg-skillpath-night shadow-panel">
+        <div className="mx-4 my-4 w-44 overflow-hidden rounded-lg border border-skillpath-teal/60 bg-skillpath-night shadow-panel lg:fixed lg:bottom-5 lg:right-5 lg:z-30">
           <div className="flex items-center gap-1.5 bg-skillpath-night/95 px-2 py-1">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-skillpath-danger opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-skillpath-danger"></span>
             </span>
-            <span className="text-[10px] font-black uppercase tracking-wide text-skillpath-cream/80">Recording</span>
+            <span className="text-xs font-bold text-skillpath-cream/80">Live camera</span>
           </div>
           {access.cameraStream ? (
             <video ref={cameraVideoRef} autoPlay muted playsInline className="aspect-video w-full scale-x-[-1] object-cover" />

@@ -1,0 +1,12 @@
+✔ grading rejects missing, coerced, fractional and out-of-range choices (0.892041ms)
+✔ public assessment never exposes answer keys or explanations (0.318025ms)
+✔ deterministic bank has unique IDs, valid choices and repeatable content (0.987646ms)
+✔ proctor policy separates review signals from access loss (0.554162ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9.8587

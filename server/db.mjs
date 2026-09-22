@@ -6,6 +6,8 @@
 import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
+const transactionContext = new AsyncLocalStorage();
 
 const { Pool } = pg;
 
@@ -58,7 +60,7 @@ pool.on('error', (err) => {
  * @param {unknown[]} [params] - Parameter values
  */
 export async function query(text, params) {
-  const result = await pool.query(text, params);
+  const result = await (transactionContext.getStore() || pool).query(text, params);
   return result;
 }
 
@@ -76,10 +78,12 @@ export async function getClient() {
  * @param {(client: import('pg').PoolClient) => Promise<T>} fn
  */
 export async function withTransaction(fn) {
+  const existing = transactionContext.getStore();
+  if (existing) return fn(existing);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const result = await fn(client);
+    const result = await transactionContext.run(client, () => fn(client));
     await client.query('COMMIT');
     return result;
   } catch (err) {

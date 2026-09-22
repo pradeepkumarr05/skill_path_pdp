@@ -203,6 +203,17 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_candidates_username ON candidates(username);
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS google_sub TEXT UNIQUE;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS setup JSONB NOT NULL DEFAULT '{}';
+CREATE TABLE IF NOT EXISTS candidate_documents (
+  candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('resume', 'transcript')),
+  filename TEXT NOT NULL,
+  content BYTEA NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (candidate_id, kind)
+);
 `;
 
 async function migrate() {

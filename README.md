@@ -1,174 +1,75 @@
 # SkillPath
 
-SkillPath is an end-to-end AI-powered skill readiness and assessment platform. This repository contains **Module 1: Chatbot Assessment + MCQ Assessment** with a complete backend and database.
+Professional profile setup, a Gemini technical interview, a deterministic skills assessment, and a Learning Gap Engine. This implementation is on `skillpath-development` (the actual GitHub branch name).
 
-## Tech Stack
+## Run locally
 
-| Layer | Technology |
-|---|---|
-| Frontend | Vite, React 18, TypeScript, Tailwind CSS, Framer Motion, Phosphor Icons |
-| Backend | Node.js HTTP API (no framework) |
-| Database | PostgreSQL 15+ (persistent sessions, results, proctor events) |
-| Auth | JWT (jsonwebtoken) — Bearer token on all protected routes |
-| AI | Gemini 2.5 Flash via REST API (server-side only) |
-| Fonts | Bricolage Grotesque (UI) + Newsreader italic (wordmark) |
+1. Install Node.js 22+ and PostgreSQL 15+.
+2. Run `npm ci`. Dependencies are installed from the lockfile; `node_modules` is not source code.
+3. Create a PostgreSQL database, then copy `.env.example` to `.env` (`cp .env.example .env` on macOS/Linux).
+4. Set `DATABASE_URL` and generate `JWT_SECRET` using `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Use that output as the secret; keep `.env` private.
+5. Configure Google and Gemini below.
+6. Run `npm run migrate`, then `npm run dev`.
+7. Open http://localhost:5173. The API is at http://localhost:8787. Restart both processes after changing environment variables.
 
-## Architecture
+Example local PostgreSQL container:
 
-```
-Browser (React/Vite)
-    ↕  REST API + JWT Bearer token
-Node.js HTTP Server (port 8787)
-    ↕  pg (node-postgres)
-PostgreSQL Database
-    ↕  Gemini REST API
-Google Generative AI (Gemini 2.5 Flash)
+```sh
+docker run --name skillpath-db -e POSTGRES_USER=skillpath -e POSTGRES_PASSWORD=local-password -e POSTGRES_DB=skillpath -p 5432:5432 -d postgres:15-alpine
 ```
 
-## Module 1 Features
+Use `postgresql://skillpath:local-password@localhost:5432/skillpath` for this example only. Use a separate password and database for production.
 
-### 🤖 Agentic Chatbot Assessment
-- **Real Gemini-backed questions** — adaptive medium → hard progression per skill
-- **Agentic state machine** — per-skill scoring, pass/fail routing, session completion
-- **Live proctoring** — clipboard, tab-switch, fullscreen, window-blur detection
-- **45-second per-question timer** — auto-submits on expiry
-- **PostgreSQL persistence** — sessions survive server restarts
+## Google sign-in setup
 
-### 📋 MCQ Skill Assessment (Deterministic)
-- **22 fixed questions** across 11 Full Stack skills (2 per skill)
-- **Uniform coverage** — every claimed skill tested equally
-- **Timed assessment** — 75 seconds per item, auto-submit on expiry
-- **Proctoring** — same event model as chatbot stage
-- **Graded results** — per-question correctChoice + explanation revealed post-submission
+1. In [Google Cloud Console](https://console.cloud.google.com/), select or create your project.
+2. Configure Google Auth Platform branding and audience. While the app is in testing, add the Google accounts that will test it as test users.
+3. Create an OAuth client of type **Web application**.
+4. Add `http://localhost:5173` to **Authorized JavaScript origins**. Add your exact HTTPS production origin when deploying. Hostnames and ports must match; `127.0.0.1` is a different origin.
+5. Put the same client ID in `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` in `.env`. The ID is public configuration, not a client secret. This popup ID-token flow does not require a client secret or callback route.
+6. Restart the app. Choose **Sign in with Google** or **Sign up with Google**. The server verifies the ID token signature, audience, expiry, and verified email before issuing an application token.
+7. A new account opens profile setup. A returning account with completed setup opens the Learning Gap Engine with its saved profile and latest result.
 
-### 🔐 JWT Authentication
-- `POST /api/auth/login` — upsert candidate by email, return JWT
-- Bearer token required on all `/api/agent/*` and `/api/skill-assessment/*` routes
-- Token propagated transparently by the frontend API client
+The Google button is only displayed when the client ID is configured. Password accounts remain supported. A real Google popup/consent flow still needs your OAuth client and a test account; forged-token rejection is covered by automated tests.
 
-## Quick Start
+Reference: [Google server-side ID-token verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
 
-### Prerequisites
-- Node.js 20+
-- PostgreSQL 15+ (running locally or cloud)
-- Gemini API key from [aistudio.google.com](https://aistudio.google.com/apikey)
+## Gemini setup
 
-### 1. Install dependencies
-```bash
-npm install
+1. Create a key in [Google AI Studio](https://aistudio.google.com/apikey), with API access and quota for your project.
+2. Set `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-3.6-flash`. The previous local `gemini-2.5-flash` configuration was rejected by the provider during verification.
+3. Keep `ALLOW_DETERMINISTIC_AI_FALLBACK=false` for normal operation. Unavailable AI then produces a retryable error instead of silently assigning a heuristic score.
+4. The server uses the official `@google/genai` SDK with structured JSON responses, a 20-second request timeout, and one retry for transient failures. `GEMINI_TIMEOUT_MS` must be at least 10000.
+
+For explicitly offline development only, setting `ALLOW_DETERMINISTIC_AI_FALLBACK=true` enables the existing question bank and heuristic evaluator. Those scores are not equivalent to Gemini evaluation. Never expose the Gemini key through a `VITE_` variable.
+
+Reference: [Google GenAI SDK](https://github.com/googleapis/js-genai).
+
+## Assessment behavior
+
+- The AI interview assesses claimed skills with medium questions and an optional harder follow-up, using a server-controlled timer and persisted state.
+- The deterministic module is the existing **22-question Full Stack MCQ assessment**, not a second generative chatbot. Its answer keys remain server-side until submission.
+- The deterministic catalog currently covers Full Stack Engineering. Other profile interests do not imply that additional domain question banks exist.
+- Camera and entire-screen sharing are required. Microphone is optional. Use desktop Chrome or Edge on localhost or HTTPS; mobile browsers generally do not provide the required screen capture APIs.
+- Both assessments display a live camera thumbnail. Lost camera, screen sharing, or fullscreen terminates the assessment. Clipboard/context-menu attempts and focus changes are logged; repeated warnings terminate the session.
+- Camera motion and persistent darkness are local review signals. They do not automatically prove cheating or disqualify a person. This browser-based implementation does not identify extra faces, phones, voices, or activity outside the shared screen.
+- Video is not recorded or uploaded. Only proctoring events, answers, scores, timestamps, and uploaded PDF documents are persisted.
+- Optional resume/transcript uploads accept actual, unencrypted PDFs up to 5 MB. The server parses and stores the bytes in PostgreSQL.
+
+## Verification
+
+```sh
+npm run test:unit
+npm run test:api       # requires the running API/database and configured Gemini
+npm run build
+npx playwright install chromium
+npm run test:browser   # requires localhost:5173 and localhost:8787
 ```
 
-### 2. Configure environment
-```bash
-# Copy the template
-copy .env.example .env
-```
+The browser test creates test accounts and uploads a generated PDF. It exercises signup, setup, restoration, both assessments, video playback, scores, and responsive screens. It uses Chromium's simulated media and live configured Gemini. Test accounts are left in the dedicated development database for inspection; do not run these tests against production.
 
-Edit `.env`:
-```env
-GEMINI_API_KEY=your-gemini-api-key-here
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/skillpath
-JWT_SECRET=any-long-random-string-here
-```
+See [implementation notes](docs/IMPLEMENTATION.md) and [screenshots and evidence](screenshots/README.md). No automated suite establishes 100% correctness or proves that a browser can detect every form of cheating.
 
-### 3. Create the database
-```bash
-# Using psql
-psql -U postgres -c "CREATE DATABASE skillpath;"
+## Deployment
 
-# Or in pgAdmin / any client:
-# CREATE DATABASE skillpath;
-```
-
-### 4. Run schema migration
-```bash
-npm run migrate
-```
-
-Expected output:
-```
-[migrate] Running SkillPath schema migration...
-[migrate] ✓ All tables created / already exist.
-```
-
-### 5. Start development servers
-```bash
-npm run dev
-```
-
-This starts:
-- **Frontend** → http://localhost:5173
-- **API** → http://localhost:8787
-
-### 6. Run end-to-end tests (optional)
-```bash
-# In a separate terminal while npm run dev is running
-npm run test:api
-```
-
-## API Routes
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/health` | Public | Server health + Gemini status |
-| POST | `/api/auth/login` | Public | Upsert candidate, return JWT |
-| GET | `/api/auth/me` | JWT | Return authenticated candidate |
-| POST | `/api/agent/start` | JWT | Start chatbot session |
-| POST | `/api/agent/answer` | JWT | Submit chatbot answer |
-| POST | `/api/agent/proctor` | JWT | Record chatbot proctor event |
-| GET | `/api/agent/session` | JWT | Fetch chatbot session |
-| POST | `/api/skill-assessment` | JWT | Create MCQ assessment |
-| POST | `/api/skill-assessment/submit` | JWT | Submit MCQ answers |
-| POST | `/api/skill-assessment/proctor` | JWT | Record MCQ proctor event |
-
-## Database Schema
-
-| Table | Purpose |
-|---|---|
-| `candidates` | Candidate profiles (upserted by email) |
-| `chat_sessions` | Chatbot assessment sessions |
-| `chat_skill_states` | Per-skill state machine (pending → medium → hard → completed) |
-| `chat_skill_attempts` | Individual question scores |
-| `chat_questions` | Gemini-generated questions |
-| `chat_transcript` | Full conversation log |
-| `proctor_events` | All proctoring violations |
-| `skill_assessments` | MCQ assessment instances |
-| `skill_assessment_results` | Graded MCQ results |
-| `auth_sessions` | JWT tracking |
-
-## npm Scripts
-
-| Script | Description |
-|---|---|
-| `npm run dev` | Start both Vite client + API server |
-| `npm run dev:api` | API server only |
-| `npm run dev:client` | Vite client only |
-| `npm run migrate` | Run database migration |
-| `npm run test:api` | Run end-to-end API tests |
-| `npm run build` | TypeScript check + production build |
-| `npm run typecheck` | TypeScript type check only |
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | Yes | Google AI Studio API key |
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | JWT signing secret (any random string) |
-| `GEMINI_MODEL` | No | Override model (default: `gemini-3.6-flash`) |
-| `JWT_EXPIRES_IN` | No | Token TTL (default: `7d`) |
-| `API_PORT` | No | API port (default: `8787`) |
-
-## Security Notes
-
-- `.env` is git-ignored — never commit it
-- All Gemini calls are server-side only — API key never reaches the browser
-- JWT tokens are validated on every protected route
-- Proctor events auto-terminate sessions after 3 violations
-- Answer timer is enforced server-side (not just client-side)
-
-## Documentation
-
-- [UI consistency guide](docs/ui-consistency.md)
-- [Project architecture](docs/project-architecture.md)
-- [Verification notes](docs/verification.md)
+Build with `npm run build`; serve `dist/` and proxy `/api` to the Node API. Set `CLIENT_ORIGIN` to the exact frontend HTTPS origin, configure Google with that origin, run migrations before deploying, and set all secrets on the API host. The development proxy targets port 8787. Bearer tokens are kept in browser session storage and expire according to `JWT_EXPIRES_IN` (default 7 days); sign-out clears the local token. Production deployments should also configure HTTPS, backups, document retention, monitoring, and an appropriate token lifetime.

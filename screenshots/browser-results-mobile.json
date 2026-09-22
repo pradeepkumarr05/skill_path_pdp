@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "captures": [
+    "01-login",
+    "02-signup",
+    "03-pdf-validation",
+    "04-profile",
+    "05-profile-review",
+    "06-dashboard",
+    "07-guidelines",
+    "08-chatbot-camera",
+    "09-chatbot-result",
+    "10-deterministic-camera",
+    "11-deterministic-results",
+    "12-learning-roadmap",
+    "13-returning-dashboard"
+  ],
+  "media": "Chromium simulated camera and screen",
+  "ai": "Live configured Gemini SDK",
+  "checks": [
+    "signup",
+    "PDF content validation",
+    "profile persistence",
+    "session restore",
+    "camera playback",
+    "chatbot progression",
+    "deterministic scoring",
+    "results restore",
+    "responsive overflow",
+    "no runtime page errors"
+  ]
+}

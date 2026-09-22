@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, FormEvent, useId, useMemo, useState } from 'react';
+import type { ReactNode, ReactElement } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,8 +17,12 @@ import {
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
 import type { LoginMethod } from './LoginPage';
+import { uploadDocument } from '../api/skillpathApi';
 
 interface ProfileSetupPageProps {
+  initialProfile?: ProfileSetupResult;
+  initialName?: string;
+  saving?: boolean;
   initialEmail?: string;
   lastLoginMethod: LoginMethod | null;
   onBack: () => void;
@@ -30,6 +34,7 @@ type Qualification = 'High School' | 'Diploma' | 'Bachelor Degree' | 'Master Deg
 type Domain = 'Full Stack Engineering' | 'Data Science and AI' | 'DevOps and Cloud' | 'Cybersecurity' | 'Mobile Engineering' | 'Networks and IoT';
 
 export interface ProfileSetupResult {
+  setup?: Record<string, string>;
   name: string;
   email: string;
   qualification: Qualification;
@@ -115,33 +120,34 @@ const selectClass =
   'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
 const cardClass = 'rounded-lg border border-white/10 bg-skillpath-night text-skillpath-cream shadow-panel';
 
-export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComplete }: ProfileSetupPageProps) {
-  const [firstName, setFirstName] = useState('Aarav');
-  const [lastName, setLastName] = useState('Mehta');
-  const [age, setAge] = useState('22');
-  const [gender, setGender] = useState<Gender>('Prefer not to say');
-  const [email, setEmail] = useState(initialEmail || 'candidate@skillpath.com');
-  const [qualification, setQualification] = useState<Qualification>('Bachelor Degree');
-  const [collegeName, setCollegeName] = useState('Vellore Institute of Technology');
-  const [customCollegeName, setCustomCollegeName] = useState('');
-  const [collegeCity, setCollegeCity] = useState('Bengaluru');
-  const [degree, setDegree] = useState('B.Tech');
-  const [branch, setBranch] = useState('Computer Science and Engineering');
-  const [ugDegree, setUgDegree] = useState('B.Tech');
-  const [ugBranch, setUgBranch] = useState('Computer Science and Engineering');
-  const [cgpa, setCgpa] = useState('8.2');
-  const [startYear, setStartYear] = useState('2021');
-  const [endYear, setEndYear] = useState('2025');
-  const [tenthPercentage, setTenthPercentage] = useState('88');
-  const [twelfthPercentage, setTwelfthPercentage] = useState('84');
-  const [board, setBoard] = useState('CBSE');
-  const [domain, setDomain] = useState<Domain>('Full Stack Engineering');
-  const [interestedRoles, setInterestedRoles] = useState<string[]>(['Full Stack Developer Trainee']);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(['React', 'Node.js', 'TypeScript']);
-  const [noExistingSkills, setNoExistingSkills] = useState(false);
+export function ProfileSetupPage({ initialEmail, initialProfile, initialName, saving, lastLoginMethod, onBack, onComplete }: ProfileSetupPageProps) {
+  const saved = initialProfile?.setup || {};
+  const [firstName, setFirstName] = useState(saved.firstName || initialName?.split(' ')[0] || '');
+  const [lastName, setLastName] = useState(saved.lastName || initialName?.split(' ').slice(1).join(' ') || '');
+  const [age, setAge] = useState(saved.age || '');
+  const [gender, setGender] = useState<Gender>((saved.gender as Gender) || 'Prefer not to say');
+  const [email, setEmail] = useState(initialEmail || '');
+  const [qualification, setQualification] = useState<Qualification>(initialProfile?.qualification || 'Bachelor Degree');
+  const [collegeName, setCollegeName] = useState(saved.collegeName || '');
+  const [customCollegeName, setCustomCollegeName] = useState(saved.customCollegeName || '');
+  const [collegeCity, setCollegeCity] = useState(saved.collegeCity || '');
+  const [degree, setDegree] = useState(saved.degree || 'B.Tech');
+  const [branch, setBranch] = useState(saved.branch || 'Computer Science and Engineering');
+  const [ugDegree, setUgDegree] = useState(saved.ugDegree || 'B.Tech');
+  const [ugBranch, setUgBranch] = useState(saved.ugBranch || 'Computer Science and Engineering');
+  const [cgpa, setCgpa] = useState(saved.cgpa || '');
+  const [startYear, setStartYear] = useState(saved.startYear || '');
+  const [endYear, setEndYear] = useState(saved.endYear || '');
+  const [tenthPercentage, setTenthPercentage] = useState(saved.tenthPercentage || '');
+  const [twelfthPercentage, setTwelfthPercentage] = useState(saved.twelfthPercentage || '');
+  const [board, setBoard] = useState(saved.board || 'CBSE');
+  const [domain, setDomain] = useState<Domain>(initialProfile?.domain || 'Full Stack Engineering');
+  const [interestedRoles, setInterestedRoles] = useState<string[]>(initialProfile?.interestedRoles || []);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(initialProfile?.claimedSkills || []);
+  const [noExistingSkills, setNoExistingSkills] = useState(initialProfile?.claimedSkills.length === 0);
   const [customSkill, setCustomSkill] = useState('');
-  const [resumeFileName, setResumeFileName] = useState('');
-  const [transcriptFileName, setTranscriptFileName] = useState('');
+  const [resumeFileName, setResumeFileName] = useState(saved.resumeFileName || '');
+  const [transcriptFileName, setTranscriptFileName] = useState(saved.transcriptFileName || '');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [locked, setLocked] = useState(false);
 
@@ -196,17 +202,17 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
   const canSubmit =
     firstName.trim().length > 1 &&
     lastName.trim().length > 1 &&
-    Number(age) >= 13 &&
+    Number(age) >= 13 && Number(age) <= 100 &&
     email.includes('@') &&
     interestedRoles.length > 0 &&
     (noExistingSkills || selectedSkills.length > 0) &&
     (isHighSchool
-      ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 && board.length > 0
+      ? Number(tenthPercentage) > 0 && Number(tenthPercentage) <= 100 && Number(twelfthPercentage) > 0 && Number(twelfthPercentage) <= 100 && board.length > 0
       : resolvedCollegeName.trim().length > 1 &&
         collegeCity.length > 0 &&
         degree.length > 0 &&
         branch.length > 0 &&
-        Number(cgpa) > 0 &&
+        Number(cgpa) > 0 && Number(cgpa) <= 10 &&
         startYear.length > 0 &&
         endYear.length > 0 &&
         validStudyDuration &&
@@ -257,6 +263,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
   };
 
   const profileResult: ProfileSetupResult = {
+    setup: { firstName, lastName, age, gender, collegeName, customCollegeName, collegeCity, degree, branch, ugDegree, ugBranch, cgpa, startYear, endYear, tenthPercentage, twelfthPercentage, board },
     name: `${firstName} ${lastName}`.trim(),
     email,
     qualification,
@@ -274,7 +281,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
   };
 
   const continueToGuidelines = () => {
-    if (!locked) return;
+    if (!locked || saving) return;
     onComplete(profileResult);
   };
 
@@ -301,7 +308,6 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                 <div className="h-full rounded-full bg-skillpath-teal transition-all" style={{ width: `${completion}%` }} />
               </div>
             </div>
-            <span className="hidden rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:inline-flex">2/4 complete</span>
           </div>
         </header>
 
@@ -309,7 +315,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
           <section className="min-w-0">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Profile Setup</h1>
+                <h1 className="text-3xl font-bold leading-tight text-skillpath-cream">Profile setup</h1>
                 <p className="mt-3 max-w-3xl text-base font-medium leading-7 text-skillpath-cream/70">
                   Tell SkillPath who you are, what you studied, and where you want to grow.
                 </p>
@@ -353,7 +359,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                     </select>
                   </Field>
                   <Field label="Email ID" className="sm:col-span-2">
-                    <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={fieldsDisabled} autoComplete="email" />
+                    <input className={inputClass} type="email" value={email} readOnly disabled autoComplete="email" />
                   </Field>
                 </div>
               </section>
@@ -388,7 +394,8 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                   ) : (
                     <>
                       <Field label="College name">
-                        <select className={selectClass} value={collegeName} onChange={(event) => setCollegeName(event.target.value)} disabled={fieldsDisabled}>
+                    <select className={selectClass} value={collegeName} onChange={(event) => setCollegeName(event.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select a college</option>
                           {collegeOptions.map((option) => (
                             <option key={option}>{option}</option>
                           ))}
@@ -401,6 +408,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                       ) : null}
                       <Field label="College city">
                         <select className={selectClass} value={collegeCity} onChange={(event) => setCollegeCity(event.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select a city</option>
                           {cityOptions.map((option) => (
                             <option key={option}>{option}</option>
                           ))}
@@ -443,6 +451,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                       </Field>
                       <Field label="Start year">
                         <select className={selectClass} value={startYear} onChange={(event) => setStartYear(event.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select year</option>
                           {years.map((year) => (
                             <option key={year}>{year}</option>
                           ))}
@@ -450,6 +459,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                       </Field>
                       <Field label="End year">
                         <select className={selectClass} value={endYear} onChange={(event) => setEndYear(event.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select year</option>
                           {years.map((year) => (
                             <option key={year}>{year}</option>
                           ))}
@@ -588,7 +598,7 @@ export function ProfileSetupPage({ initialEmail, lastLoginMethod, onBack, onComp
                         type="button"
                         onClick={continueToGuidelines}
                       >
-                        Continue to assessment guidelines
+                        {saving ? 'Saving profile...' : 'Continue to dashboard'}
                         <ArrowRight className="h-4 w-4" weight="bold" aria-hidden="true" />
                       </button>
                     )}
@@ -636,26 +646,44 @@ function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
 }
 
 function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
+  const id = useId();
   return (
-    <label className={`block ${className}`}>
-      <span className="mb-2 block text-sm font-black text-skillpath-cream">{label}</span>
-      {children}
-    </label>
+    <div className={`block ${className}`}>
+      <label htmlFor={id} className="mb-2 block text-sm font-black text-skillpath-cream">{label}</label>
+      {isValidElement(children) ? cloneElement(children as ReactElement<{ id: string }>, { id }) : children}
+    </div>
   );
 }
 
 function FileField({ label, fileName, disabled, onChange }: { label: string; fileName: string; disabled: boolean; onChange: (fileName: string) => void }) {
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
   return (
     <label className="block rounded-md border border-white/12 bg-white/8 p-4">
       <span className="mb-3 block text-sm font-black text-skillpath-cream">{label}</span>
       <input
         className="block w-full text-sm font-bold text-skillpath-cream file:mr-3 file:rounded-md file:border-0 file:bg-skillpath-teal file:px-4 file:py-2 file:text-sm file:font-black file:text-skillpath-night"
         type="file"
-        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.files?.[0]?.name ?? '')}
+        accept=".pdf,application/pdf"
+        disabled={disabled || uploading}
+        onChange={async (event) => {
+          const input = event.currentTarget;
+          const file = input.files?.[0];
+          setError(''); onChange('');
+          if (!file) return;
+          const signature = await file.slice(0, 5).text();
+          if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || signature !== '%PDF-' || file.size > 5 * 1024 * 1024) {
+            setError('Choose a valid PDF file up to 5 MB.'); input.value = ''; return;
+          }
+          setUploading(true);
+          try { const response = await uploadDocument(file, label === 'Resume' ? 'resume' : 'transcript'); onChange(response.filename); }
+          catch (err) { setError(err instanceof Error ? err.message : 'Upload failed. Please try again.'); input.value = ''; }
+          finally { setUploading(false); }
+        }}
       />
-      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional'}</span>
+      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional. PDF only, up to 5 MB.'}</span>
+      {error && <span role="alert" className="mt-2 block text-sm text-red-300">{error}</span>}
+      {uploading && <span role="status" className="mt-2 block text-sm text-skillpath-cream">Verifying and uploading PDF...</span>}
     </label>
   );
 }

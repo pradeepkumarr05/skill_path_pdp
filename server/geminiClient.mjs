@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { GoogleGenAI } from '@google/genai';
 
 let envLoaded = false;
 
@@ -71,7 +72,7 @@ function parseJsonText(text) {
 // Default bounded latency for any single Gemini call. Kept tight so the
 // assessment UI never stalls waiting on a slow model response — callers
 // race this against a local fallback (question bank / heuristic scorer).
-const DEFAULT_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 7000);
+const DEFAULT_TIMEOUT_MS = Math.max(10000, Number(process.env.GEMINI_TIMEOUT_MS || 20000));
 const MAX_RETRIES = Number(process.env.GEMINI_MAX_RETRIES || 1);
 
 function sleep(ms) {
@@ -83,36 +84,13 @@ async function callGeminiOnce({ systemInstruction, prompt, schema, temperature, 
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel()}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature,
-            maxOutputTokens,
-            responseMimeType: 'application/json',
-            responseSchema: schema,
-          },
-        }),
-      },
-    );
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const message = payload?.error?.message || `Gemini request failed with status ${response.status}.`;
-      const error = new Error(message);
-      error.statusCode = response.status;
-      // 429/5xx are worth retrying; 4xx (bad key, bad schema) are not.
-      error.retryable = response.status === 429 || response.status >= 500;
-      throw error;
-    }
-
-    const text = extractText(payload);
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: geminiModel(), contents: prompt,
+      config: { systemInstruction, temperature, maxOutputTokens, responseMimeType: 'application/json',
+        responseSchema: schema, abortSignal: controller.signal, httpOptions: { timeout: timeoutMs } },
+    });
+    const text = response.text;
     if (!text) {
       const error = new Error('Gemini returned an empty response.');
       error.retryable = true;
@@ -120,6 +98,7 @@ async function callGeminiOnce({ systemInstruction, prompt, schema, temperature, 
     }
     return parseJsonText(text);
   } catch (error) {
+    error.retryable = error.retryable || error.status === 429 || error.status >= 500;
     if (error?.name === 'AbortError') {
       const timeoutError = new Error(`Gemini request timed out after ${timeoutMs}ms.`);
       timeoutError.statusCode = 504;

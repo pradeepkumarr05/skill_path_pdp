@@ -1,0 +1,26 @@
+▶ account and assessment integration
+  ✔ passwordless login is rejected (55.525273ms)
+  ✔ register creates account without completing profile (288.485926ms)
+  ✔ duplicate registration cannot overwrite account (303.495667ms)
+  ✔ wrong password fails and correct password restores identity (583.76707ms)
+  ✔ unverified Google credential cannot authenticate (2.942513ms)
+  ✔ incomplete profile cannot start an assessment (5.028422ms)
+  ✔ PDF restriction is enforced server-side (5.480697ms)
+  ✔ PDF upload rejects forged content and accepts a parsed PDF (30.046961ms)
+  ✔ profile is saved against authenticated account and survives reload (12.992922ms)
+  ✔ create second account (292.729401ms)
+  ✔ duplicate starts return the same assessment with hidden answer key (21.140874ms)
+  ✔ cross-account submission is denied (4.392737ms)
+  ✔ motion is recorded without automatic disqualification (7.37487ms)
+  ✔ null answers score zero and repeat submission preserves original result (14.74878ms)
+  ✔ screen-share loss terminates and blocks scoring (17.602531ms)
+  ✔ chatbot starts, enforces ownership and progresses after an answer (7798.834844ms)
+✔ account and assessment integration (9448.531375ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9681.785794

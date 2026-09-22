@@ -37,13 +37,13 @@ const guidelineItems = [
   {
     id: 'screen',
     title: 'Share your assessment screen',
-    detail: 'Screen sharing is required so the proctor can detect unsupported windows and overlays.',
+    detail: 'Share your entire screen and keep sharing active throughout the assessment.',
     icon: Desktop,
   },
   {
     id: 'fullscreen',
     title: 'Stay in full-screen mode',
-    detail: 'The app asks for full-screen access. Exiting full-screen creates a proctor warning.',
+    detail: 'Exiting full-screen, stopping the camera, or ending screen sharing terminates the assessment.',
     icon: ArrowsOut,
   },
   {
@@ -61,7 +61,7 @@ const guidelineItems = [
   {
     id: 'environment',
     title: 'Use a quiet, well-lit room',
-    detail: 'Multiple faces, background voices, and secondary devices may be flagged for review.',
+    detail: 'Sustained camera movement and dark or obstructed video are logged for review. Keep your camera steady and your face well lit.',
     icon: Microphone,
   },
   {
@@ -79,7 +79,7 @@ const guidelineItems = [
   {
     id: 'recording',
     title: 'Understand that activity is recorded',
-    detail: 'Screen access, media status, proctoring flags, answers, scores, and timestamps are stored for evaluation.',
+    detail: 'Answers, scores, and proctoring events are stored. Camera frames are processed locally; camera and screen video are not uploaded or recorded.',
     icon: LockKey,
   },
 ];
@@ -122,6 +122,8 @@ export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSk
       }
       
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const surface = screenStream.getVideoTracks()[0]?.getSettings().displaySurface;
+      if (surface && surface !== 'monitor') throw new Error('Choose Entire Screen in the sharing dialog, rather than a window or browser tab.');
 
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
@@ -229,6 +231,8 @@ export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSk
                 return (
                   <button
                     key={item.id}
+                    role="checkbox"
+                    aria-checked={isAccepted}
                     className={`min-h-[150px] rounded-lg border p-4 text-left shadow-soft transition ${
                       isAccepted ? 'border-skillpath-teal bg-skillpath-teal text-skillpath-night' : 'border-white/10 bg-white/8 text-skillpath-cream hover:border-skillpath-teal'
                     }`}

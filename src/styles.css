@@ -165,12 +165,7 @@ body {
   line-height: 1.55;
 
   background:
-    linear-gradient(
-      135deg,
-      #071a22 0%,
-      #09232c 48%,
-      #0a1c29 100%
-    );
+    #0b252b;
 }
 
 button,
@@ -202,9 +197,9 @@ h5,
 h6 {
   margin-top: 0;
 
-  color: var(--sp-text-bright);
+  color: inherit;
 
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 p {
@@ -289,12 +284,7 @@ label {
   overflow: hidden;
 
   background:
-    linear-gradient(
-      135deg,
-      #071a22 0%,
-      #09232c 45%,
-      #0a1c29 100%
-    );
+    #0b252b;
 }
 
 
@@ -316,12 +306,7 @@ label {
   inset: 0;
 
   background:
-    linear-gradient(
-      120deg,
-      rgba(25, 211, 174, 0.055),
-      transparent 42%,
-      rgba(116, 119, 255, 0.055)
-    );
+    #0b252b;
 
   pointer-events: none;
 
@@ -345,11 +330,7 @@ label {
   right: -100px;
 
   background:
-    radial-gradient(
-      circle,
-      rgba(25, 211, 174, 0.075),
-      transparent 70%
-    );
+    #0b252b;
 
   filter: blur(90px);
 
@@ -367,15 +348,7 @@ label {
   position: relative;
 
   background-image:
-    linear-gradient(
-      rgba(73, 193, 181, 0.045) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(73, 193, 181, 0.045) 1px,
-      transparent 1px
-    );
+    none;
 
   background-size: 42px 42px;
 
@@ -409,7 +382,7 @@ label {
   font-variation-settings:
     'opsz' 60;
 
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 
   color: var(--sp-teal-light);
 
@@ -430,11 +403,7 @@ select {
   color: #e3f7f2 !important;
 
   background:
-    linear-gradient(
-      135deg,
-      #10313a,
-      #0d2933
-    ) !important;
+    #0b252b !important;
 
   border:
     1px solid
@@ -471,11 +440,7 @@ input:hover,
 textarea:hover,
 select:hover {
   background:
-    linear-gradient(
-      135deg,
-      #123841,
-      #0f3039
-    ) !important;
+    #0b252b !important;
 
   border-color:
     rgba(77, 190, 181, 0.34) !important;
@@ -493,11 +458,7 @@ select:focus {
     #f0fffc !important;
 
   background:
-    linear-gradient(
-      135deg,
-      #123b43,
-      #10323b
-    ) !important;
+    #0b252b !important;
 
   border-color:
     var(--sp-teal) !important;
@@ -626,11 +587,7 @@ input[type='checkbox']:checked::after {
   position: relative;
 
   background:
-    linear-gradient(
-      145deg,
-      rgba(19, 57, 68, 0.96),
-      rgba(12, 39, 48, 0.98)
-    );
+    #0b252b;
 
   border:
     1px solid
@@ -678,18 +635,12 @@ button[type='submit'],
 
   color: #05251e !important;
 
-  background:
-    linear-gradient(
-      135deg,
-      #42e5c3 0%,
-      #19d3ae 52%,
-      #0fb98f 100%
-    ) !important;
+  background: #d8ff4f !important;
 
   border: none !important;
 
   border-radius:
-    12px;
+    6px;
 
   font-weight: 700;
 
@@ -844,12 +795,7 @@ a:hover {
   height: 1px;
 
   background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(77, 190, 181, 0.22),
-      transparent
-    );
+    #0b252b;
 }
 
 
@@ -884,12 +830,7 @@ progress::-webkit-progress-bar {
 
 progress::-webkit-progress-value {
   background:
-    linear-gradient(
-      90deg,
-      #0fb993,
-      #26d9b1,
-      #4dd9ff
-    );
+    #0b252b;
 
   border-radius:
     999px;
@@ -897,12 +838,7 @@ progress::-webkit-progress-value {
 
 progress::-moz-progress-bar {
   background:
-    linear-gradient(
-      90deg,
-      #0fb993,
-      #26d9b1,
-      #4dd9ff
-    );
+    #0b252b;
 
   border-radius:
     999px;

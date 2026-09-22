@@ -16,6 +16,7 @@
  *   getOrCreateCandidate(profileInput)
  */
 import { randomUUID } from 'node:crypto';
+import { selectedAnswer, validateProctorEvent } from './assessmentPolicy.mjs';
 import { query, withTransaction } from './db.mjs';
 import { SUPPORTED_DOMAIN, normalizeClaimedSkills } from './domainConfig.mjs';
 import {
@@ -397,6 +398,10 @@ Rules:
 
 export async function startAgenticSession(profileInput, candidateId) {
   const profile = sanitizeProfile(profileInput);
+  if (candidateId) {
+    const existing = await query("SELECT id FROM chat_sessions WHERE candidate_id=$1 AND status='active' AND current_question_id IS NOT NULL ORDER BY created_at DESC LIMIT 1", [candidateId]);
+    if (existing.rows[0]) return loadPublicSession(existing.rows[0].id);
+  }
 
   // If no candidateId provided, upsert by email
   let resolvedCandidateId = candidateId;
@@ -554,10 +559,12 @@ async function generateQuestion(sessionData, skillState, difficulty, recentTrans
     text = String(response.question || '').trim();
     intent = String(response.intent || '').trim();
   } catch (error) {
+    if (process.env.ALLOW_DETERMINISTIC_AI_FALLBACK !== 'true') throw Object.assign(new Error('The AI assessment is temporarily unavailable. Please try again.'), { statusCode: 503 });
     console.error('[agent] generateQuestion fell back to question bank:', error.message);
   }
 
   if (!text) {
+    if (process.env.ALLOW_DETERMINISTIC_AI_FALLBACK !== 'true') throw Object.assign(new Error('The AI returned an invalid question. Please try again.'), { statusCode: 503 });
     const fallback = pickFallbackQuestion(skillState.skill, difficulty, excludeTexts);
     text = fallback.question;
     intent = fallback.intent;
@@ -729,6 +736,7 @@ async function evaluateWithGemini(session, question, skillState, answer, timedOu
       nextAction: ['ask_hard', 'complete_skill'].includes(response.nextAction) ? response.nextAction : 'complete_skill',
     };
   } catch (error) {
+    if (process.env.ALLOW_DETERMINISTIC_AI_FALLBACK !== 'true') throw Object.assign(new Error('Your answer could not be evaluated. Please retry.'), { statusCode: 503 });
     console.error('[agent] evaluateWithGemini fell back to heuristic scoring:', error.message);
     return heuristicEvaluate({ questionText: question.text, answer, difficulty: question.difficulty, timedOut });
   }
@@ -938,6 +946,7 @@ async function incrementWarning(sessionId) {
 }
 
 export async function recordProctorEvent(sessionId, payload, candidateId) {
+  validateProctorEvent(payload);
   const { rows } = await query(`SELECT status, candidate_id FROM chat_sessions WHERE id = $1`, [sessionId]);
 
   if (!rows.length) {
@@ -960,9 +969,16 @@ export async function recordProctorEvent(sessionId, payload, candidateId) {
   const detail = String(payload?.detail || '');
   const label = proctorLabel(type);
 
+  if (['tab_hidden', 'window_blur'].includes(type)) {
+    const recent = await query("SELECT id FROM proctor_events WHERE session_id=$1 AND type IN ('tab_hidden','window_blur') AND created_at > NOW() - INTERVAL '2 seconds' LIMIT 1", [sessionId]);
+    if (recent.rows.length) return loadPublicSession(sessionId);
+  }
+
   await insertProctorEvent(sessionId, null, 'chat', type, detail);
 
-  const isCritical = type === 'fullscreen_exit' || type === 'camera_track_ended';
+  if (type === 'camera_motion' || type === 'camera_obscured') return loadPublicSession(sessionId);
+
+  const isCritical = ['fullscreen_exit', 'camera_track_ended', 'screen_track_ended'].includes(type);
   let terminate = isCritical;
 
   if (isCritical) {
@@ -1061,6 +1077,10 @@ async function loadPublicSkillAssessment(assessmentId) {
 }
 
 export async function createSkillAssessment(profileInput, candidateId) {
+  if (candidateId) {
+    const existing = await query("SELECT id FROM skill_assessments WHERE candidate_id=$1 AND status='active' AND due_at > NOW() ORDER BY created_at DESC LIMIT 1", [candidateId]);
+    if (existing.rows[0]) return loadPublicSkillAssessment(existing.rows[0].id);
+  }
   // Upsert candidate if needed
   let resolvedCandidateId = candidateId;
   if (!resolvedCandidateId) {
@@ -1091,6 +1111,7 @@ export async function createSkillAssessment(profileInput, candidateId) {
 }
 
 export async function recordSkillAssessmentProctorEvent(assessmentId, payload, candidateId) {
+  validateProctorEvent(payload);
   const { rows } = await query(`SELECT * FROM skill_assessments WHERE id = $1`, [assessmentId]);
 
   if (!rows.length) {
@@ -1116,7 +1137,9 @@ export async function recordSkillAssessmentProctorEvent(assessmentId, payload, c
 
   await insertProctorEvent(null, assessmentId, 'skill', type, detail);
 
-  if (type === 'fullscreen_exit' || type === 'camera_track_ended') {
+  if (type === 'camera_motion' || type === 'camera_obscured') return loadPublicSkillAssessment(assessmentId);
+
+  if (['fullscreen_exit', 'camera_track_ended', 'screen_track_ended'].includes(type)) {
     await query(
       `UPDATE skill_assessments SET status = 'terminated', terminated_at = NOW() WHERE id = $1`,
       [assessmentId],
@@ -1185,11 +1208,12 @@ export async function submitSkillAssessment(assessmentId, answersInput, timedOut
     }
   }
 
-  const answers = answersInput && typeof answersInput === 'object' ? answersInput : {};
+  const expired = Date.now() > new Date(assessment.due_at).getTime() + 5000;
+  const answers = !expired && answersInput && typeof answersInput === 'object' && !Array.isArray(answersInput) ? answersInput : {};
   const items = buildDeterministicSkillAssessment();
 
   const results = items.map((item) => {
-    const selectedChoice = Number(answers[item.id]);
+    const selectedChoice = selectedAnswer(answers[item.id], item.choices.length);
     const correct = selectedChoice === item.correctChoice;
     return {
       id: item.id,

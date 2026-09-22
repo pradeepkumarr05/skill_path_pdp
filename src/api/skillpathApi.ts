@@ -99,6 +99,9 @@ export interface LoginResponse {
     assessmentDomain: string;
     interestedRoles: string[];
     claimedSkills: string[];
+    profileComplete: boolean;
+    setup: Record<string, string>;
+    latestResult?: { score: number; level: string; total: number; correct_count: number } | null;
   };
 }
 
@@ -107,7 +110,7 @@ export interface LoginResponse {
  * Stores the returned JWT for subsequent calls.
  */
 export async function login(profile: ProfileSetupResult & { username?: string; password?: string }): Promise<LoginResponse> {
-  const response = await postJson<LoginResponse>('/api/auth/login', {
+  const response = await postJson<LoginResponse>('/api/auth/profile', {
     email: profile.email,
     name: profile.name,
     username: profile.username,
@@ -116,10 +119,36 @@ export async function login(profile: ProfileSetupResult & { username?: string; p
     domain: profile.domain,
     interestedRoles: profile.interestedRoles,
     claimedSkills: profile.claimedSkills,
+    setup: profile.setup,
+    resumeFileName: profile.resumeFileName,
+    transcriptFileName: profile.transcriptFileName,
   });
 
+  return response;
+}
+
+export async function register(username: string, email: string, password: string) {
+  const response = await postJson<LoginResponse>('/api/auth/register', { username, email, password });
   storeToken(response.token);
   return response;
+}
+
+export async function googleLogin(credential: string) {
+  const response = await postJson<LoginResponse>('/api/auth/google', { credential });
+  storeToken(response.token);
+  return response;
+}
+
+export function currentUser() { return getJson<LoginResponse['candidate']>('/api/auth/me'); }
+
+export async function uploadDocument(file: File, kind: 'resume' | 'transcript') {
+  const content = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Unable to read the selected file.'));
+    reader.onload = () => resolve(String(reader.result).split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+  return postJson<{ filename: string }>('/api/auth/document', { kind, filename: file.name, content });
 }
 
 export async function loginCredentials(username: string, password: string): Promise<LoginResponse> {
