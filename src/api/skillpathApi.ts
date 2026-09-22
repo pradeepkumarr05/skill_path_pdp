@@ -102,6 +102,11 @@ export interface LoginResponse {
     profileComplete: boolean;
     setup: Record<string, string>;
     latestResult?: { score: number; level: string; total: number; correct_count: number } | null;
+    assessmentHistory: Array<{
+      type: 'chatbot' | 'deterministic'; id: string; status: string; reason?: string; aggregate?: { score: number; level: string; skillsAssessed: number } | null;
+      model?: string; geminiConfigured?: boolean; warningCount?: number; score?: number | null; level?: string; total?: number; correctCount?: number; timedOut?: boolean;
+      createdAt: string; completedAt?: string | null; terminatedAt?: string | null;
+    }>;
   };
 }
 

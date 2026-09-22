@@ -7,12 +7,30 @@ const google = new OAuth2Client();
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
 
 export async function publicCandidate(c) {
-  const latest = await query(`SELECT r.score, r.level, r.total, r.correct_count FROM skill_assessment_results r
-    JOIN skill_assessments a ON a.id=r.assessment_id WHERE a.candidate_id=$1 ORDER BY r.created_at DESC LIMIT 1`, [c.id]);
+  const [latest, deterministicHistory, chatbotHistory] = await Promise.all([
+    query(`SELECT r.score, r.level, r.total, r.correct_count, r.timed_out, r.created_at FROM skill_assessment_results r
+      JOIN skill_assessments a ON a.id=r.assessment_id WHERE a.candidate_id=$1 ORDER BY r.created_at DESC LIMIT 1`, [c.id]),
+    query(`SELECT a.id, a.status, a.started_at, a.submitted_at, a.terminated_at, r.score, r.level, r.total, r.correct_count, r.timed_out
+      FROM skill_assessments a LEFT JOIN skill_assessment_results r ON r.assessment_id=a.id
+      WHERE a.candidate_id=$1 ORDER BY a.created_at DESC LIMIT 25`, [c.id]),
+    query(`SELECT id, status, reason, aggregate, model, gemini_configured, created_at, completed_at, terminated_at, warning_count
+      FROM chat_sessions WHERE candidate_id=$1 ORDER BY created_at DESC LIMIT 25`, [c.id]),
+  ]);
+  const assessmentHistory = [
+    ...chatbotHistory.rows.map(item => ({ type: 'chatbot', id: item.id, status: item.status, reason: item.reason,
+      aggregate: item.aggregate, model: item.model, geminiConfigured: item.gemini_configured, warningCount: item.warning_count,
+      createdAt: item.created_at, completedAt: item.completed_at, terminatedAt: item.terminated_at })),
+    ...deterministicHistory.rows.map(item => ({ type: 'deterministic', id: item.id, status: item.status, score: item.score === null ? null : Number(item.score),
+      level: item.level, total: item.total, correctCount: item.correct_count, timedOut: item.timed_out,
+      createdAt: item.started_at, completedAt: item.submitted_at, terminatedAt: item.terminated_at })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return { id: c.id, name: c.name, email: c.email, qualification: c.qualification,
     selectedDomain: c.selected_domain, assessmentDomain: c.assessment_domain,
     interestedRoles: c.interested_roles, claimedSkills: c.claimed_skills,
-    profileComplete: c.profile_complete, setup: c.setup || {}, latestResult: latest.rows[0] || null };
+    profileComplete: c.profile_complete, setup: c.setup || {}, latestResult: latest.rows[0] ? {
+      ...latest.rows[0], score: Number(latest.rows[0].score), total: Number(latest.rows[0].total), correct_count: Number(latest.rows[0].correct_count),
+    } : null,
+    assessmentHistory };
 }
 
 export async function authenticate(body, mode) {

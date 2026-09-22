@@ -62,6 +62,10 @@ test('account and assessment integration', async t => {
     assert.equal(response.status, 200); assert.equal(response.body.score, 0);
     const retry = await request('/api/skill-assessment/submit', { assessmentId: assessment.assessmentId, answers: Object.fromEntries(buildDeterministicSkillAssessment().map(item => [item.id, item.correctChoice])) });
     assert.equal(retry.body.score, 0);
+    const restored = await request('/api/auth/me', null, token, 'GET');
+    assert.equal(restored.status, 200);
+    assert.equal(restored.body.latestResult.score, 0);
+    assert.ok(restored.body.assessmentHistory.some(item => item.type === 'deterministic' && item.id === assessment.assessmentId && item.status === 'submitted'));
   });
   await t.test('screen-share loss terminates and blocks scoring', async () => {
     const created = await request('/api/skill-assessment', {});
@@ -78,5 +82,7 @@ test('account and assessment integration', async t => {
     assert.equal((await request(`/api/agent/session?sessionId=${session.sessionId}`, null, secondToken, 'GET')).status, 404);
     const answered = await request('/api/agent/answer', { sessionId: session.sessionId, questionId: session.currentQuestion.id, answer: 'I do not know.' });
     assert.equal(answered.status, 200); assert.notEqual(answered.body.currentQuestion?.id, session.currentQuestion.id);
+    const restored = await request('/api/auth/me', null, token, 'GET');
+    assert.ok(restored.body.assessmentHistory.some(item => item.type === 'chatbot' && item.id === session.sessionId));
   });
 });
