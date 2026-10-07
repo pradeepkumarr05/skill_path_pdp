@@ -2,21 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDeterministicSkillAssessment } from './deterministicSkillAssessment.mjs';
 import { PDFDocument } from 'pdf-lib';
+import { randomBytes, createHash } from 'node:crypto';
+import pool, { query } from './db.mjs';
 
 const base = process.env.TEST_API_URL || 'http://localhost:8787';
 const suffix = `${Date.now()}${Math.random().toString(16).slice(2, 8)}`;
 let token; let secondToken; let candidate;
+const testCandidateIds = [];
 async function request(path, body, credential = token, method = 'POST') {
   const response = await fetch(`${base}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(credential ? { Authorization: `Bearer ${credential}` } : {}) }, ...(method === 'POST' ? { body: JSON.stringify(body) } : {}) });
   return { status: response.status, body: await response.json() };
 }
+async function verifyTestAccount(id) {
+  testCandidateIds.push(id);
+  // Seed only the test account's delivery credential; exercise the real verification endpoint.
+  // Actual SMTP delivery and unverified access are covered by test:auth.
+  const raw = randomBytes(32).toString('hex');
+  await query(`INSERT INTO account_tokens (candidate_id, purpose, token_hash, expires_at)
+    VALUES ($1, 'verify', $2, NOW()+INTERVAL '5 minutes')`, [id, createHash('sha256').update(raw).digest('hex')]);
+  assert.equal((await request('/api/auth/verify-email', { token: raw }, null)).status, 200);
+}
 const profile = { name: 'Test Candidate', qualification: 'Bachelor Degree', domain: 'Full Stack Engineering', interestedRoles: ['Associate Software Engineer'], claimedSkills: ['React'], setup: { age: '24', collegeCity: 'Bengaluru', collegeName: 'Vellore Institute of Technology', degree: 'B.Tech', branch: 'Computer Science and Engineering', cgpa: '8.4', startYear: '2021', endYear: '2025' }, resumeFileName: 'resume.pdf' };
 test('account and assessment integration', async t => {
+  t.after(async () => {
+    for (const id of testCandidateIds) await query('DELETE FROM candidates WHERE id=$1', [id]);
+    await pool.end();
+  });
   await t.test('passwordless login is rejected', async () => { assert.equal((await request('/api/auth/login', { email: 'victim@example.com' }, null)).status, 401); });
   await t.test('register creates account without completing profile', async () => {
     const response = await request('/api/auth/register', { username: `user${suffix}`, email: `user${suffix}@example.com`, password: 'StrongPassword123!' }, null);
     assert.equal(response.status, 200); token = response.body.token; candidate = response.body.candidate;
     assert.equal(candidate.profileComplete, false);
+    assert.equal(candidate.emailVerified, false);
+    await verifyTestAccount(candidate.id);
   });
   await t.test('duplicate registration cannot overwrite account', async () => {
     assert.equal((await request('/api/auth/register', { username: `user${suffix}`, email: candidate.email, password: 'OtherPassword123!' }, null)).status, 409);
@@ -43,6 +61,7 @@ test('account and assessment integration', async t => {
   await t.test('create second account', async () => {
     const response = await request('/api/auth/register', { username: `other${suffix}`, email: `other${suffix}@example.com`, password: 'StrongPassword123!' }, null);
     secondToken = response.body.token; assert.equal(response.status, 200);
+    await verifyTestAccount(response.body.candidate.id);
     assert.equal((await request('/api/auth/profile', { ...profile, resumeFileName: undefined }, secondToken)).status, 200);
   });
   let assessment;

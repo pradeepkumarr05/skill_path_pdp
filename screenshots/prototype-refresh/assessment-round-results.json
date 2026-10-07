@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "questionsAnswered": 22,
+  "result": {
+    "total": 22,
+    "score": "18"
+  },
+  "checks": [
+    "Single-question navigation",
+    "All answers submitted through UI",
+    "Result persisted",
+    "Learning generation unlocked",
+    "Reload restores score"
+  ],
+  "limitations": "Temporary verified test account; simulated proctor media; deliberately selects first choice, not a performance benchmark."
+}

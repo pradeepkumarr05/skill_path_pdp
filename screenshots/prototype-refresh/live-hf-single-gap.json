@@ -1,0 +1,189 @@
+{
+  "summary": {
+    "passed": true,
+    "provider": "Hugging Face (real hosted inference)",
+    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "syntheticScores": true,
+    "topics": 1,
+    "sessions": 4,
+    "estimatedMinutes": 40,
+    "elapsedSeconds": 89
+  },
+  "plan": {
+    "id": "d4c8a1e0-9646-4c66-93a8-32f0f681a12b",
+    "createdAt": "2026-10-07T09:48:45.883Z",
+    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "topics": [
+      {
+        "id": "topic-0",
+        "skill": "HTML",
+        "reason": "Based on your assessment, you have not yet demonstrated proficiency in HTML. It is essential to build a strong foundation in HTML to effectively create and structure web pages.",
+        "sessions": [
+          {
+            "id": "topic-0-session-0",
+            "title": "Introduction to HTML",
+            "choices": [
+              "It specifies the character encoding of the document.",
+              "It declares the document type and version of HTML.",
+              "It sets the title of the web page.",
+              "It defines the root element of the HTML document."
+            ],
+            "content": "HTML (Hypertext Markup Language) is the standard markup language used to create web pages. HTML documents are made up of elements, which are represented by tags. Here’s a basic structure of an HTML document:\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>My First Web Page</title>\n</head>\n<body>\n    <h1>Welcome to My Web Page</h1>\n    <p>This is my first paragraph.</p>\n</body>\n</html>\n```\n\n- `<!DOCTYPE html>`: Declares the document type and version of HTML.\n- `<html>`: The root element of the HTML document.\n- `<head>`: Contains meta-information about the document, such as the title.\n- `<title>`: Sets the title of the web page, which appears in the browser tab.\n- `<body>`: Contains the content of the web page.\n- `<h1>`: A heading element, with `h1` being the highest level.\n- `<p>`: A paragraph element.",
+            "minutes": 10,
+            "exercise": "Create a simple HTML document with a title, a heading, and a paragraph. Save it as `index.html` and open it in a web browser to see the result.",
+            "question": "What is the purpose of the `<!DOCTYPE html>` declaration in an HTML document?",
+            "objective": "Understand the basics of HTML and how to create a simple web page."
+          },
+          {
+            "id": "topic-0-session-1",
+            "title": "HTML Elements and Attributes",
+            "choices": [
+              "src",
+              "href",
+              "class",
+              "id"
+            ],
+            "content": "HTML elements are the building blocks of a web page. Each element has a start tag, content, and an end tag. Attributes provide additional information about an element and are added to the start tag. Here’s an example of an anchor element with an attribute:\n\n```html\n<a href=\"https://example.com\">Visit Example</a>\n```\n\n- `<a>`: The anchor element is used to create hyperlinks.\n- `href`: An attribute that specifies the URL of the page the link goes to.\n\nOther common attributes include:\n- `class`: Used to specify a class for an element, which can be used in CSS for styling.\n- `id`: Used to specify a unique identifier for an element.\n- `src`: Used in image elements to specify the source of the image.\n\nExample of using `class` and `id`:\n\n```html\n<div class=\"container\" id=\"main-content\">\n    <p>This is a paragraph inside a div with a class and an id.</p>\n</div>\n```",
+            "minutes": 10,
+            "exercise": "Create an HTML document with a `div` element that has a `class` and an `id` attribute. Inside the `div`, add a paragraph and a link to an external website.",
+            "question": "Which attribute is used to specify the URL of a hyperlink in an anchor element?",
+            "objective": "Learn about HTML elements and how to use attributes to modify their behavior."
+          },
+          {
+            "id": "topic-0-session-2",
+            "title": "HTML Forms",
+            "choices": [
+              "To specify the URL where the form data will be sent.",
+              "To define a label for an input element.",
+              "To create a line break between form elements.",
+              "To specify the type of input field."
+            ],
+            "content": "HTML forms are used to collect user input and send it to a server for processing. A form is created using the `<form>` element, and input fields are created using various input elements. Here’s a basic example of a form:\n\n```html\n<form action=\"/submit-form\" method=\"post\">\n    <label for=\"name\">Name:</label>\n    <input type=\"text\" id=\"name\" name=\"name\">\n    <br>\n    <label for=\"email\">Email:</label>\n    <input type=\"email\" id=\"email\" name=\"email\">\n    <br>\n    <input type=\"submit\" value=\"Submit\">\n</form>\n```\n\n- `<form>`: The form element. The `action` attribute specifies the URL where the form data will be sent, and the `method` attribute specifies the HTTP method (GET or POST).\n- `<label>`: The label element is used to define a label for an input element. The `for` attribute should match the `id` of the input element.\n- `<input>`: The input element. The `type` attribute specifies the type of input (e.g., text, email, submit).\n- `<br>`: A line break element, used to add a line break between form elements.",
+            "minutes": 10,
+            "exercise": "Create an HTML form with fields for a user's name, email, and a submit button. Set the form action to `/submit-form` and the method to `post`.",
+            "question": "What is the purpose of the `label` element in an HTML form?",
+            "objective": "Understand how to create and use HTML forms to collect user input."
+          },
+          {
+            "id": "topic-0-session-3",
+            "title": "HTML Lists",
+            "choices": [
+              "ul",
+              "ol",
+              "dl",
+              "li"
+            ],
+            "content": "HTML provides three types of lists: ordered lists, unordered lists, and description lists. Ordered lists are used for items that need to be in a specific order, while unordered lists are used for items that do not need to be in a specific order. Description lists are used to describe terms or names. Here’s an example of each:\n\n- Ordered List:\n\n```html\n<ol>\n    <li>First item</li>\n    <li>Second item</li>\n    <li>Third item</li>\n</ol>\n```\n\n- Unordered List:\n\n```html\n<ul>\n    <li>First item</li>\n    <li>Second item</li>\n    <li>Third item</li>\n</ul>\n```\n\n- Description List:\n\n```html\n<dl>\n    <dt>Term 1</dt>\n    <dd>Description of Term 1</dd>\n    <dt>Term 2</dt>\n    <dd>Description of Term 2</dd>\n</dl>\n```\n\n- `<ol>`: Ordered list element.\n- `<ul>`: Unordered list element.\n- `<li>`: List item element.\n- `<dl>`: Description list element.\n- `<dt>`: Term element in a description list.\n- `<dd>`: Description element in a description list.",
+            "minutes": 10,
+            "exercise": "Create an HTML document with an ordered list of your favorite books, an unordered list of your hobbies, and a description list of programming languages you know.",
+            "question": "Which HTML element is used to create an ordered list?",
+            "objective": "Learn how to create and use different types of HTML lists."
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "HTML",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "CSS",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "JavaScript",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "TypeScript",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "React",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "Node.js",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "REST APIs",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "Data Structures and Algorithms",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "PostgreSQL",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "MongoDB",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      },
+      {
+        "mcq": 100,
+        "chat": null,
+        "score": 100,
+        "skill": "Git",
+        "status": "Review optional",
+        "questions": 2,
+        "skippable": true
+      }
+    ],
+    "estimatedMinutes": 40,
+    "completed": []
+  }
+}

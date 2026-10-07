@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "authentication": {
+      "targetKind": "existing-ui",
+      "projectId": "d97eef26-d0cf-4263-9d13-a1e3c0793732",
+      "baselineDraftId": "0f9a52a6-c502-47cd-8ef3-2db11564a97b",
+      "activeDraftId": "0f9a52a6-c502-47cd-8ef3-2db11564a97b",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/pages/LoginPage.tsx",
+        "src/components/AuthLayout.tsx",
+        "src/components/SkillPathLogo.tsx",
+        "src/auth.css",
+        "src/styles.css:1:75",
+        "tailwind.config.js"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "b1626ac0ba87e1734603c15e640ba03775c7c0ffd73ed827dfba267c7c462175",
+        "src/pages/LoginPage.tsx": "fbb9b9c11252f4a406f5292b707d81783111c3cf6bc2dda0fc162554304970f5",
+        "src/components/AuthLayout.tsx": "9fdc1c6f68d40470f16a5dcca3b51411a563dbc5956037769a12d2801aa13cd1",
+        "src/auth.css": "d4be194be15b9eda180921f4f93c910e4156ead6c48ee6b2d4dd0fdc0dbca7c1",
+        "src/components/SkillPathLogo.tsx": "c5c1ffd989b42d1730a7734811a085c30225bff5ab13b10915831ecead478131",
+        "src/styles.css": "70c20ac487d609b0169caa3143ccec1adc856de95f1fad9212cb687e5043a4b8",
+        "tailwind.config.js": "39786bc84e1407048984b0d0d419e2ee0c9bc18792e1b88c376bb2fc54a5f7d7"
+      },
+      "components": [],
+      "referenceIds": ["454dd4d4-f8c6-4058-b756-da6e94559d92"],
+      "drafts": {
+        "0f9a52a6-c502-47cd-8ef3-2db11564a97b": {
+          "title": "SkillPath Sign in: Mixed Image and Product Composition",
+          "currentVersion": 4,
+          "visualDirection": "Manrope upright headings, wider form, compact brand header, photographic bookshelves. User chose mixed composition; rendered revision awaiting visual approval before React implementation."
+        }
+      },
+      "implementationNote": "Fingerprints describe current React auth implementation; draft v4 is the revised proposal and has not been implemented. Existing logo remains italic; headings/body move to Manrope. Refresh source hashes after implementing approved proposal.",
+      "updatedAt": "2026-10-06T12:00:00.000Z"
+    }
+  }
+}

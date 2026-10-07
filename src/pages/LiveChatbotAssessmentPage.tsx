@@ -12,7 +12,7 @@ import {
   LockKey,
   PaperPlaneTilt,
   ShieldWarning,
-  Sparkle,
+  ListChecks,
   WarningCircle,
 } from '@phosphor-icons/react';
 import { SkillPathLogo } from '../components/SkillPathLogo';
@@ -254,12 +254,12 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
       <CameraMonitor access={access} active={session?.status === 'active'} report={reportProctorEvent} />
       {/* Non-blocking fullscreen nudge — the real enforcement happens server-side via proctor events */}
       {!isFullscreen && session?.status === 'active' && (
-        <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-skillpath-danger px-4 py-2 text-sm font-black text-white">
+        <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-skillpath-danger px-4 py-2 text-sm font-semibold text-white">
           <ArrowsOut className="h-4 w-4" weight="bold" aria-hidden="true" />
           You are not in full-screen mode. Re-enter full-screen immediately to avoid termination.
           <button
             type="button"
-            className="ml-2 rounded-md bg-white/20 px-3 py-1 text-xs font-black hover:bg-white/30"
+            className="ml-2 rounded-md bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30"
             onClick={() => document.documentElement.requestFullscreen?.().catch(() => undefined)}
           >
             Re-enter full screen
@@ -267,12 +267,12 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
         </div>
       )}
 
-      <header className="border-b border-white/10 bg-skillpath-night/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <header className="border-b border-sp-border bg-skillpath-night/95 backdrop-blur">
+        <div className="mx-auto flex w-full flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-4">
             <SkillPathLogo />
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs font-black sm:grid-cols-4 lg:min-w-[560px]">
+          <div className="grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4 lg:min-w-[560px]">
             <ProctorChip label="Camera" active={access.cameraGranted} />
             <ProctorChip label="Microphone" active={access.microphoneGranted} />
             <ProctorChip label="Screen share" active={access.screenGranted} />
@@ -281,16 +281,16 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-3xl font-black leading-tight text-skillpath-cream sm:text-4xl">Live Chatbot Assessment</h1>
-            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-skillpath-cream/65">
+            <h1 className="text-3xl font-semibold leading-tight text-skillpath-cream sm:text-4xl">Technical interview</h1>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-sp-muted">
               An AI examiner asks adaptive medium-to-hard questions across your claimed skills and grades each answer before advancing.
             </p>
           </div>
           <button
-            className="inline-flex h-11 w-fit items-center justify-center gap-2 rounded-md border border-white/14 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 w-fit items-center justify-center gap-2 rounded-md border border-sp-border bg-sp-panel px-4 text-sm font-semibold text-skillpath-cream transition hover:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-50"
             type="button"
             onClick={onBack}
             disabled={session?.status === 'active'}
@@ -303,8 +303,8 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_320px] lg:items-start">
           {/* ── Left rail: skill progress stepper ── */}
           <aside className="order-2 lg:order-1 lg:sticky lg:top-24">
-            <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-              <h2 className="mb-4 text-xs font-black uppercase tracking-wide text-skillpath-cream/50">Skill progress</h2>
+            <section className="rounded-lg border border-sp-border bg-white p-4">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-sp-muted">Skill progress</h2>
               <ol className="space-y-1">
                 {(session?.skillStates ?? profile.claimedSkills.map((skill) => ({ skill, status: 'pending' } as SkillState))).map((skill, index) => (
                   <SkillStep key={skill.skill} skill={skill} isCurrent={index === skillIndex} />
@@ -315,13 +315,13 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
 
           {/* ── Center: question + answer panel ── */}
           <section className="order-1 min-w-0 lg:order-2">
-            <section className="flex min-h-[560px] flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-panel">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-white/[0.03] px-5 py-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-skillpath-cream/55">
-                  <Sparkle className="h-4 w-4 text-skillpath-teal" weight="fill" aria-hidden="true" />
+            <section className="flex min-h-[560px] flex-col overflow-hidden rounded-xl border border-sp-border bg-white shadow-panel">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sp-border bg-sp-panel px-5 py-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-skillpath-cream/55">
+                  <ListChecks className="h-4 w-4 text-skillpath-teal" weight="fill" aria-hidden="true" />
                   {session?.model ?? 'AI examiner'}
                 </div>
-                <div className="flex items-center gap-2 text-xs font-black text-skillpath-cream/55">
+                <div className="flex items-center gap-2 text-xs font-semibold text-skillpath-cream/55">
                   <ShieldWarning className="h-4 w-4" weight="bold" aria-hidden="true" />
                   Warnings {session?.warningCount ?? 0}/{session?.warningLimit ?? 3}
                 </div>
@@ -375,23 +375,23 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
                 {session?.status === 'completed' ? (
                   <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3 text-center">
                     <CheckCircle className="h-14 w-14 text-skillpath-teal" weight="fill" aria-hidden="true" />
-                    <h3 className="text-2xl font-black text-skillpath-cream">Chatbot assessment complete</h3>
-                    <p className="max-w-sm text-sm font-medium text-skillpath-cream/65">
+                    <h3 className="text-2xl font-semibold text-skillpath-cream">Technical interview complete</h3>
+                    <p className="max-w-sm text-sm font-medium text-sp-muted">
                       Overall readiness level:{' '}
-                      <span className="font-black text-skillpath-teal">{session.aggregate?.level?.replace('_', ' ') ?? '—'}</span>
+                      <span className="font-semibold text-skillpath-teal">{session.aggregate?.level?.replace('_', ' ') ?? '—'}</span>
                     </p>
                   </div>
                 ) : null}
               </div>
 
               {session?.status === 'active' && activeQuestion ? (
-                <form className="border-t border-white/10 bg-white/[0.03] p-4 sm:p-5" onSubmit={handleSubmit}>
+                <form className="border-t border-sp-border bg-sp-panel p-4 sm:p-5" onSubmit={handleSubmit}>
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wide text-skillpath-cream/50">Your answer</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-sp-muted">Your answer</span>
                     <TimerReadout secondsLeft={secondsLeft} pct={timerPct} urgency={timerUrgency} />
                   </div>
                   <textarea
-                    className="min-h-[140px] w-full resize-none rounded-md border border-white/12 bg-skillpath-cream px-4 py-3 font-mono text-sm leading-6 text-skillpath-night shadow-soft transition placeholder:text-skillpath-muted focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70"
+                    className="min-h-[140px] w-full resize-none rounded-md border border-sp-border bg-white px-4 py-3 font-mono text-sm leading-6 text-sp-ink shadow-soft transition placeholder:text-skillpath-muted focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70"
                     value={answer}
                     onChange={(event) => setAnswer(event.target.value)}
                     placeholder="Type your answer here — be specific and concise."
@@ -403,7 +403,7 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
                       {currentSkill ? `${currentSkill.mediumAttempts} medium attempt(s) recorded` : 'Adaptive round'}
                     </p>
                     <button
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-skillpath-teal px-6 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream disabled:cursor-not-allowed disabled:bg-skillpath-muted"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sp-accent text-white px-6 text-sm font-semibold transition hover:bg-sp-sage disabled:cursor-not-allowed disabled:bg-skillpath-muted"
                       type="submit"
                       disabled={!canSubmit}
                     >
@@ -415,9 +415,9 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
               ) : null}
 
               {session?.status === 'completed' ? (
-                <div className="border-t border-white/10 p-4 sm:p-5">
+                <div className="border-t border-sp-border p-4 sm:p-5">
                   <button
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-skillpath-teal px-4 text-base font-black text-skillpath-night transition hover:bg-skillpath-cream"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-sp-accent text-white px-4 text-base font-semibold transition hover:bg-sp-sage"
                     type="button"
                     onClick={() => onComplete(session)}
                   >
@@ -431,8 +431,8 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
 
           {/* ── Right rail: candidate + proctoring summary ── */}
           <aside className="order-3 min-w-0 lg:sticky lg:top-24 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <h2 className="text-lg font-black">Candidate summary</h2>
+            <section className="rounded-lg border border-skillpath-teal/40 bg-white p-5 text-sp-ink shadow-panel">
+              <h2 className="text-lg font-semibold">Candidate summary</h2>
               <div className="mt-4 space-y-2.5 text-sm">
                 <SummaryRow label="Candidate" value={profile.name} />
                 <SummaryRow label="Domain" value={session?.assessmentDomain ?? 'Full Stack Engineering'} />
@@ -442,11 +442,11 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
               <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
                 <div className="mb-3 flex items-center gap-2">
                   <LockKey className="h-5 w-5 text-skillpath-teal" weight="bold" aria-hidden="true" />
-                  <p className="text-sm font-black">Claimed skills</p>
+                  <p className="text-sm font-semibold">Claimed skills</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {profile.claimedSkills.map((skill) => (
-                    <span key={skill} className="rounded-md border border-white/14 bg-white/8 px-2.5 py-1.5 text-xs font-black">
+                    <span key={skill} className="rounded-md border border-sp-border bg-sp-panel px-2.5 py-1.5 text-xs font-semibold">
                       {skill}
                     </span>
                   ))}
@@ -487,8 +487,8 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-skillpath-night/95 p-6 backdrop-blur-sm">
           <div className="flex max-w-lg flex-col items-center rounded-xl border border-skillpath-danger bg-white p-10 text-center shadow-2xl">
             <WarningCircle className="mb-4 h-16 w-16 text-skillpath-danger" weight="fill" aria-hidden="true" />
-            <h2 className="mb-4 text-3xl font-black text-skillpath-night">Assessment terminated</h2>
-            <p className="mb-6 text-base font-bold leading-6 text-skillpath-night/80">
+            <h2 className="mb-4 text-3xl font-semibold text-sp-ink">Assessment terminated</h2>
+            <p className="mb-6 text-base font-bold leading-6 text-sp-body">
               {session.reason || 'This session was terminated due to a proctoring violation.'}
             </p>
             <p className="mb-6 text-sm font-bold text-skillpath-danger">
@@ -498,7 +498,7 @@ export function LiveChatbotAssessmentPage({ profile, access, onBack, onComplete 
               onClick={() => {
                 window.location.href = '/';
               }}
-              className="w-full rounded-md bg-skillpath-danger px-6 py-4 text-lg font-black text-white transition hover:bg-red-700"
+              className="w-full rounded-md bg-skillpath-danger px-6 py-4 text-lg font-semibold text-white transition hover:bg-red-700"
               type="button"
             >
               Exit now
@@ -526,8 +526,8 @@ function ProctorChip({ label, active }: { label: string; active: boolean }) {
 function Badge({ children, tone = 'default' }: { children: ReactNode; tone?: 'default' | 'accent' }) {
   return (
     <span
-      className={`rounded-md px-2.5 py-1 text-xs font-black uppercase tracking-wide ${
-        tone === 'accent' ? 'bg-skillpath-danger/20 text-skillpath-danger' : 'bg-white/8 text-skillpath-cream/75'
+      className={`rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
+        tone === 'accent' ? 'bg-skillpath-danger/20 text-skillpath-danger' : 'bg-sp-panel text-sp-muted'
       }`}
     >
       {children}
@@ -544,7 +544,7 @@ function TimerReadout({ secondsLeft, pct, urgency }: { secondsLeft: number; pct:
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
         <div className={`h-full rounded-full transition-all duration-300 ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className={`text-xs font-black tabular-nums ${textColor}`}>{secondsLeft}s</span>
+      <span className={`text-xs font-semibold tabular-nums ${textColor}`}>{secondsLeft}s</span>
     </div>
   );
 }
@@ -556,19 +556,19 @@ function SkillStep({ skill, isCurrent }: { skill: SkillState; isCurrent: boolean
   return (
     <li className={`flex items-start gap-3 rounded-md px-2 py-2.5 transition ${isCurrent ? 'bg-skillpath-teal/10' : ''}`}>
       <span
-        className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[10px] font-black ${
+        className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[10px] font-semibold ${
           isDone
-            ? 'bg-skillpath-teal text-skillpath-night'
+            ? 'bg-skillpath-teal text-white'
             : isActive
               ? 'border-2 border-skillpath-teal text-skillpath-teal'
-              : 'border border-white/20 text-skillpath-cream/40'
+              : 'border border-sp-border text-sp-muted'
         }`}
       >
         {isDone ? <CheckCircle className="h-4 w-4" weight="fill" aria-hidden="true" /> : null}
       </span>
       <div className="min-w-0">
-        <p className={`truncate text-sm font-black ${isActive ? 'text-skillpath-teal' : 'text-skillpath-cream/85'}`}>{skill.skill}</p>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-skillpath-cream/40">
+        <p className={`truncate text-sm font-semibold ${isActive ? 'text-skillpath-teal' : 'text-skillpath-cream/85'}`}>{skill.skill}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-sp-muted">
           {skill.finalLevel ? skill.finalLevel.replace('_', ' ') : skill.status.replace('_', ' ')}
         </p>
       </div>
@@ -590,11 +590,11 @@ function FeedbackCard({
   gaps: string[];
 }) {
   return (
-    <div className="mt-5 rounded-lg border border-white/10 bg-skillpath-night/60 p-4 animate-fade-in">
+    <div className="mt-5 rounded-lg border border-sp-border bg-skillpath-night/60 p-4 animate-fade-in">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-wide text-skillpath-cream/50">Examiner feedback</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-sp-muted">Examiner feedback</p>
         {score !== null ? (
-          <span className="rounded-md bg-skillpath-teal/15 px-2 py-0.5 text-xs font-black text-skillpath-teal">
+          <span className="rounded-md bg-skillpath-teal/15 px-2 py-0.5 text-xs font-semibold text-skillpath-teal">
             {score}/100 {level ? `· ${level.replace('_', ' ')}` : ''}
           </span>
         ) : null}
@@ -604,7 +604,7 @@ function FeedbackCard({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {strengths.length > 0 && (
             <div>
-              <p className="mb-1 text-[10px] font-black uppercase tracking-wide text-skillpath-teal">Strengths</p>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-skillpath-teal">Strengths</p>
               <ul className="space-y-1 text-xs font-medium text-skillpath-cream/70">
                 {strengths.map((item, i) => (
                   <li key={i}>• {item}</li>
@@ -614,7 +614,7 @@ function FeedbackCard({
           )}
           {gaps.length > 0 && (
             <div>
-              <p className="mb-1 text-[10px] font-black uppercase tracking-wide text-skillpath-danger">Gaps</p>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-skillpath-danger">Gaps</p>
               <ul className="space-y-1 text-xs font-medium text-skillpath-cream/70">
                 {gaps.map((item, i) => (
                   <li key={i}>• {item}</li>
@@ -631,8 +631,8 @@ function FeedbackCard({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-skillpath-line bg-white p-3">
-      <p className="font-black text-skillpath-muted">{label}</p>
-      <p className="mt-1 font-black text-skillpath-night">{value}</p>
+      <p className="font-semibold text-skillpath-muted">{label}</p>
+      <p className="mt-1 font-semibold text-sp-ink">{value}</p>
     </div>
   );
 }

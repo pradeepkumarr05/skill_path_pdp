@@ -64,7 +64,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error((payload as { error?: string })?.error || `Request failed with status ${response.status}`);
+    throw new ApiError((payload as { error?: string })?.error || `Request failed with status ${response.status}`, response.status);
   }
 
   return payload as T;
@@ -80,7 +80,7 @@ async function getJson<T>(path: string): Promise<T> {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error((payload as { error?: string })?.error || `Request failed with status ${response.status}`);
+    throw new ApiError((payload as { error?: string })?.error || `Request failed with status ${response.status}`, response.status);
   }
 
   return payload as T;
@@ -90,6 +90,7 @@ async function getJson<T>(path: string): Promise<T> {
 
 export interface LoginResponse {
   token: string;
+  verificationSent?: boolean;
   candidate: {
     id: string;
     name: string;
@@ -100,7 +101,9 @@ export interface LoginResponse {
     interestedRoles: string[];
     claimedSkills: string[];
     profileComplete: boolean;
+    emailVerified: boolean;
     setup: Record<string, string>;
+    skillEvidence?: SkillEvidence[];
     latestResult?: { score: number; level: string; total: number; correct_count: number } | null;
     assessmentHistory: Array<{
       type: 'chatbot' | 'deterministic'; id: string; status: string; reason?: string; aggregate?: { score: number; level: string; skillsAssessed: number } | null;
@@ -114,8 +117,8 @@ export interface LoginResponse {
  * Login / register a candidate by email.
  * Stores the returned JWT for subsequent calls.
  */
-export async function login(profile: ProfileSetupResult & { username?: string; password?: string }): Promise<LoginResponse> {
-  const response = await postJson<LoginResponse>('/api/auth/profile', {
+export async function login(profile: ProfileSetupResult & { username?: string; password?: string }): Promise<Pick<LoginResponse, 'candidate'>> {
+  const response = await postJson<Pick<LoginResponse, 'candidate'>>('/api/auth/profile', {
     email: profile.email,
     name: profile.name,
     username: profile.username,
@@ -166,9 +169,29 @@ export async function loginCredentials(username: string, password: string): Prom
   return response;
 }
 
-export function logout() {
+export async function logout() {
+  try { await postJson('/api/auth/logout', {}); }
+  catch (error) { if (!(error instanceof ApiError && error.status === 401)) throw error; }
   clearToken();
 }
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+export const authConfig = () => getJson<{ googleConfigured: boolean; emailConfigured: boolean }>('/api/auth/config');
+export const forgotPassword = (email: string) => postJson<{ message: string }>('/api/auth/forgot-password', { email });
+export const resetPassword = (token: string, password: string) => postJson('/api/auth/reset-password', { token, password });
+export const verifyEmail = (token: string) => postJson('/api/auth/verify-email', { token });
+export const resendVerification = () => postJson('/api/auth/resend-verification', {});
+
+export interface SkillEvidence { skill: string; mcq: number | null; chat: number | null; score: number | null; questions: number; skippable: boolean; status: string }
+export interface LearningLesson { id: string; title: string; objective: string; content: string; exercise: string; question: string; choices: string[]; minutes: number }
+export interface LearningPlan { id: string; createdAt: string; model: string; estimatedMinutes: number; evidence: SkillEvidence[]; topics: { id: string; skill: string; reason: string; sessions: LearningLesson[] }[]; completed: { lesson_id: string; completed_at: string }[] }
+export interface LearningOverview { plan: LearningPlan | null; configured: boolean; needsRefresh?: boolean }
+export const getLearning = () => getJson<LearningOverview>('/api/learning');
+export const generateLearning = () => postJson<LearningOverview>('/api/learning/generate', {});
+export const startLearning = (planId: string, lessonId: string) => postJson<{ id: string; startedAt: string; requiredSeconds: number }>('/api/learning/start', { planId, lessonId });
+export const updateLearning = (action: 'heartbeat' | 'abandon' | 'complete', sessionId: string, answer?: number) => postJson<{ status: string; correct?: boolean; feedback?: string }>(`/api/learning/${action}`, { sessionId, answer });
 
 // ── Chatbot Assessment APIs ───────────────────────────────────────────────
 

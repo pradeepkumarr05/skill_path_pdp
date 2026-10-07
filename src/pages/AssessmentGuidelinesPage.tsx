@@ -16,7 +16,6 @@ import {
   WarningCircle,
   WifiHigh,
 } from '@phosphor-icons/react';
-import { SkillPathLogo } from '../components/SkillPathLogo';
 import type { ProfileSetupResult } from './ProfileSetupPage';
 import type { AssessmentAccessGrant } from '../types/assessment';
 
@@ -28,60 +27,15 @@ interface AssessmentGuidelinesPageProps {
 }
 
 const guidelineItems = [
-  {
-    id: 'permissions',
-    title: 'Allow camera (microphone optional)',
-    detail: 'Camera access is required before the chatbot room opens. Microphone is recommended but optional.',
-    icon: Camera,
-  },
-  {
-    id: 'screen',
-    title: 'Share your assessment screen',
-    detail: 'Share your entire screen and keep sharing active throughout the assessment.',
-    icon: Desktop,
-  },
-  {
-    id: 'fullscreen',
-    title: 'Stay in full-screen mode',
-    detail: 'Exiting full-screen, stopping the camera, or ending screen sharing terminates the assessment.',
-    icon: ArrowsOut,
-  },
-  {
-    id: 'switching',
-    title: 'Do not switch tabs or windows',
-    detail: 'Tab hiding, app switching, and focus loss are detected during the chatbot assessment.',
-    icon: WarningCircle,
-  },
-  {
-    id: 'clipboard',
-    title: 'Copy, cut, paste, and right-click are blocked',
-    detail: 'Clipboard and context-menu attempts are prevented and added to the proctor log.',
-    icon: ClipboardText,
-  },
-  {
-    id: 'environment',
-    title: 'Use a quiet, well-lit room',
-    detail: 'Sustained camera movement and dark or obstructed video are logged for review. Keep your camera steady and your face well lit.',
-    icon: Microphone,
-  },
-  {
-    id: 'integrity',
-    title: 'Do not use external help',
-    detail: 'Notes, search engines, AI assistants, phones, and communication apps are not allowed.',
-    icon: Prohibit,
-  },
-  {
-    id: 'network',
-    title: 'Keep a stable internet connection',
-    detail: 'If the session drops, reconnect immediately from the same device and account.',
-    icon: WifiHigh,
-  },
-  {
-    id: 'recording',
-    title: 'Understand that activity is recorded',
-    detail: 'Answers, scores, and proctoring events are stored. Camera frames are processed locally; camera and screen video are not uploaded or recorded.',
-    icon: LockKey,
-  },
+  { id: 'permissions', title: 'Allow camera access', detail: 'Camera access is required before the chatbot room opens. Microphone is recommended but optional.', icon: Camera },
+  { id: 'screen',      title: 'Share your screen', detail: 'Share your entire screen and keep sharing active throughout the assessment.', icon: Desktop },
+  { id: 'fullscreen',  title: 'Stay in full-screen', detail: 'Exiting full-screen, stopping the camera, or ending screen sharing terminates the assessment.', icon: ArrowsOut },
+  { id: 'switching',   title: 'No tab or window switching', detail: 'Tab hiding, app switching, and focus loss are detected during the chatbot assessment.', icon: WarningCircle },
+  { id: 'clipboard',   title: 'Clipboard is blocked', detail: 'Copy, cut, paste, and right-click attempts are prevented and added to the proctor log.', icon: ClipboardText },
+  { id: 'environment', title: 'Quiet, well-lit environment', detail: 'Keep your face visible and well lit. Sustained camera obstruction is logged for review.', icon: Microphone },
+  { id: 'integrity',   title: 'No external assistance', detail: 'Notes, search engines, AI assistants, phones, and communication apps are not allowed.', icon: Prohibit },
+  { id: 'network',     title: 'Stable connection required', detail: 'If the session drops, reconnect immediately from the same device and account.', icon: WifiHigh },
+  { id: 'recording',   title: 'Activity is recorded', detail: 'Answers, scores, and proctoring events are stored. Camera frames are processed locally — video is not uploaded.', icon: LockKey },
 ];
 
 export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSkipChatbot }: AssessmentGuidelinesPageProps) {
@@ -92,226 +46,190 @@ export function AssessmentGuidelinesPage({ profile, onBack, onStartChatbot, onSk
   const acceptedCount = useMemo(() => Object.values(accepted).filter(Boolean).length, [accepted]);
   const allAccepted = acceptedCount === guidelineItems.length;
   const shouldSkipChatbot = profile.claimedSkills.length === 0;
-  const claimedSkills = profile.claimedSkills.length > 0 ? profile.claimedSkills : ['No existing skills claimed'];
+  const claimedSkills = profile.claimedSkills.length > 0 ? profile.claimedSkills : ['No claimed skills'];
 
-  const toggleAccepted = (id: string) => {
-    setAccepted((current) => ({ ...current, [id]: !current[id] }));
-  };
+  const toggleAccepted = (id: string) => setAccepted(cur => ({ ...cur, [id]: !cur[id] }));
 
-  const stopStream = (stream: MediaStream | null) => {
-    stream?.getTracks().forEach((track) => track.stop());
-  };
+  const stopStream = (stream: MediaStream | null) => stream?.getTracks().forEach(t => t.stop());
 
   const requestAssessmentAccess = async () => {
     setRequestingAccess(true);
     setAccessError(null);
-
     let cameraStream: MediaStream | null = null;
     let screenStream: MediaStream | null = null;
-
     try {
       if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices?.getDisplayMedia) {
-        throw new Error('This browser does not expose the required camera, microphone, and screen-share APIs.');
+        throw new Error('This browser does not expose the required media APIs.');
       }
-
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      } catch (audioVideoErr) {
-        // Fallback to video only if microphone access is denied or unavailable
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      }
-      
+      try { cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); }
+      catch { cameraStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       const surface = screenStream.getVideoTracks()[0]?.getSettings().displaySurface;
-      if (surface && surface !== 'monitor') throw new Error('Choose Entire Screen in the sharing dialog, rather than a window or browser tab.');
-
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-      }
-
-      const hasCamera = cameraStream.getVideoTracks().some((track) => track.readyState === 'live');
-      const hasMicrophone = cameraStream.getAudioTracks().some((track) => track.readyState === 'live');
-      const hasScreen = screenStream.getVideoTracks().some((track) => track.readyState === 'live');
-
-      if (!hasCamera || !hasScreen || !document.fullscreenElement) {
-        throw new Error('Camera, screen share, and full-screen access are required.');
-      }
-
-      const accessGrant = {
-        cameraGranted: hasCamera,
-        microphoneGranted: hasMicrophone,
-        screenGranted: hasScreen,
-        fullscreenGranted: true,
-        cameraStream,
-        screenStream,
-      };
-
-      if (shouldSkipChatbot) {
-        onSkipChatbot(accessGrant);
-      } else {
-        onStartChatbot(accessGrant);
-      }
-    } catch (error) {
-      stopStream(cameraStream);
-      stopStream(screenStream);
-      setAccessError(error instanceof Error ? error.message : 'Required assessment access was not granted.');
+      if (surface && surface !== 'monitor') throw new Error('Choose Entire Screen in the sharing dialog, not a window or tab.');
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      const hasCamera     = cameraStream.getVideoTracks().some(t => t.readyState === 'live');
+      const hasMicrophone = cameraStream.getAudioTracks().some(t => t.readyState === 'live');
+      const hasScreen     = screenStream.getVideoTracks().some(t => t.readyState === 'live');
+      if (!hasCamera || !hasScreen || !document.fullscreenElement) throw new Error('Camera, screen share, and full-screen access are required.');
+      const grant: AssessmentAccessGrant = { cameraGranted: hasCamera, microphoneGranted: hasMicrophone, screenGranted: hasScreen, fullscreenGranted: true, cameraStream, screenStream };
+      shouldSkipChatbot ? onSkipChatbot(grant) : onStartChatbot(grant);
+    } catch (err) {
+      stopStream(cameraStream); stopStream(screenStream);
+      setAccessError(err instanceof Error ? err.message : 'Required assessment access was not granted.');
     } finally {
       setRequestingAccess(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-skillpath-night p-4 text-skillpath-cream sm:p-5 lg:p-6">
-      <div className="flex min-h-[calc(100vh-32px)] w-full flex-col rounded-lg border border-white/10 bg-skillpath-night shadow-panel sm:min-h-[calc(100vh-40px)] lg:min-h-[calc(100vh-48px)]">
-        <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <SkillPathLogo />
-            <span className="rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:hidden">3/4 complete</span>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="min-w-[240px]">
-              <div className="mb-2 flex items-center justify-between text-sm font-black text-skillpath-cream">
-                <span>Assessment entry</span>
-                <span>{acceptedCount}/{guidelineItems.length}</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/14">
-                <div className="h-full rounded-full bg-skillpath-teal transition-all" style={{ width: `${(acceptedCount / guidelineItems.length) * 100}%` }} />
-              </div>
+    <div className="sp-page">
+      {/* HEADER */}
+      <header className="sp-header">
+        <span className="sp-logo-script">SkillPath</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: 'var(--sp-muted)', marginBottom: 6 }}>
+              <span>Guidelines accepted</span>
+              <span>{acceptedCount}/{guidelineItems.length}</span>
             </div>
-            <span className="hidden rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:inline-flex">3/4 complete</span>
+            <div className="sp-progress">
+              <div className="sp-progress-fill" style={{ width: `${(acceptedCount / guidelineItems.length) * 100}%` }} />
+            </div>
           </div>
-        </header>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', padding: '4px 12px',
+            borderRadius: 999, background: 'var(--sp-panel)', border: '1px solid var(--sp-border)',
+            fontSize: 12, fontWeight: 700, color: 'var(--sp-muted)',
+          }}>
+            Device check
+          </span>
+        </div>
+      </header>
 
-        <div className="grid flex-1 gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(330px,420px)] lg:p-8">
-          <section className="min-w-0">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="sp-content">
+        <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'minmax(0,1fr) minmax(280px,340px)' }}>
+
+          {/* LEFT */}
+          <section style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
               <div>
-                <h1 className="text-4xl font-black leading-tight text-skillpath-cream sm:text-5xl">Agentic Assessment Guidelines</h1>
-                <p className="mt-3 max-w-4xl text-base font-medium leading-7 text-skillpath-cream/70">
-                  The next section is a Gemini-backed assessment flow. Claimed skills enter a proctored chatbot interview first; candidates without claimed skills continue directly to the Full Stack skill assessment.
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--sp-ink)', margin: 0 }}>Assessment preparation</h1>
+                <p style={{ marginTop: 6, fontSize: 14, color: 'var(--sp-muted)', maxWidth: 480 }}>
+                  Review the conditions, then allow the required devices to begin.
                 </p>
               </div>
-              <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/14 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal"
-                type="button"
-                onClick={onBack}
-              >
-                <ArrowLeft className="h-4 w-4" weight="bold" aria-hidden="true" />
+              <button type="button" className="sp-btn-secondary" onClick={onBack} style={{ flexShrink: 0 }}>
+                <ArrowLeft size={15} weight="bold" aria-hidden />
                 Back
               </button>
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-2">
-              <section className="rounded-lg border border-white/10 bg-skillpath-night shadow-panel xl:col-span-2">
-                <div className="grid gap-4 border-b border-white/10 p-4 sm:grid-cols-3 sm:p-5">
-                  <Metric icon={<Clock className="h-6 w-6" weight="bold" />} label="Answer timer" value="45 seconds" />
-                  <Metric icon={<ShieldCheck className="h-6 w-6" weight="bold" />} label="Mode" value={shouldSkipChatbot ? 'Skill test' : 'Proctored chat'} />
-                  <Metric icon={<CheckCircle className="h-6 w-6" weight="bold" />} label="Agent" value="Gemini" />
-                </div>
-                <div className="p-4 sm:p-5">
-                  <h2 className="text-xl font-black text-skillpath-cream">Claimed skills to be assessed</h2>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {claimedSkills.map((skill) => (
-                      <span key={skill} className="rounded-md border border-skillpath-teal/40 bg-white/8 px-3 py-2 text-sm font-black text-skillpath-cream">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                  {shouldSkipChatbot ? (
-                    <p className="mt-4 rounded-md border border-skillpath-citron/50 bg-white/8 p-3 text-sm font-bold leading-6 text-skillpath-cream">
-                      No claimed skills were submitted. The chatbot interview is skipped by policy, and the next step is the Full Stack skill assessment.
-                    </p>
-                  ) : null}
-                </div>
-              </section>
-
-              {guidelineItems.map((item) => {
-                const Icon = item.icon;
-                const isAccepted = Boolean(accepted[item.id]);
-                return (
-                  <button
-                    key={item.id}
-                    role="checkbox"
-                    aria-checked={isAccepted}
-                    className={`min-h-[150px] rounded-lg border p-4 text-left shadow-soft transition ${
-                      isAccepted ? 'border-skillpath-teal bg-skillpath-teal text-skillpath-night' : 'border-white/10 bg-white/8 text-skillpath-cream hover:border-skillpath-teal'
-                    }`}
-                    type="button"
-                    onClick={() => toggleAccepted(item.id)}
+            {/* Overview metrics */}
+            <div className="sp-card" style={{ marginBottom: 16, overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 0 }}>
+                {[
+                  { Icon: Clock,       label: 'Interview answer time', value: shouldSkipChatbot ? 'Not required' : '45 seconds' },
+                  { Icon: ShieldCheck, label: 'First stage', value: shouldSkipChatbot ? 'Knowledge assessment' : 'Technical interview' },
+                  { Icon: CheckCircle, label: 'Assessment stages', value: shouldSkipChatbot ? '1 stage' : '2 stages' },
+                ].map(({ Icon, label, value }, i) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px',
+                      borderRight: i < 2 ? '1px solid var(--sp-border)' : 'none',
+                    }}
                   >
-                    <div className="mb-4 flex items-start justify-between gap-4">
-                      <div className={`grid h-11 w-11 place-items-center rounded-md ${isAccepted ? 'bg-skillpath-night text-skillpath-teal' : 'bg-skillpath-teal text-skillpath-night'}`}>
-                        <Icon className="h-6 w-6" weight="bold" aria-hidden="true" />
-                      </div>
-                      {isAccepted ? <CheckCircle className="h-6 w-6" weight="fill" aria-hidden="true" /> : null}
+                    <div style={{ display: 'grid', placeItems: 'center', width: 36, height: 36, borderRadius: 8, background: 'var(--sp-sage-dim)', color: 'var(--sp-sage)', flexShrink: 0 }}>
+                      <Icon size={17} weight="bold" aria-hidden />
                     </div>
-                    <h3 className="text-lg font-black">{item.title}</h3>
-                    <p className={`mt-2 text-sm font-medium leading-6 ${isAccepted ? 'text-skillpath-night/76' : 'text-skillpath-cream/66'}`}>{item.detail}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <h2 className="text-2xl font-black">Candidate brief</h2>
-              <div className="mt-5 space-y-3 text-sm">
-                <SummaryRow label="Candidate" value={profile.name} />
-                <SummaryRow label="Domain" value={profile.domain} />
-                <SummaryRow label="Roles" value={profile.interestedRoles.join(', ')} />
-                <SummaryRow label="Resume" value={profile.resumeFileName ?? 'Not uploaded'} />
-                <SummaryRow label="Transcript" value={profile.transcriptFileName ?? 'Not uploaded'} />
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--sp-muted)' }}>{label}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--sp-ink)', marginTop: 2 }}>{value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {!allAccepted ? (
-                <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
-                  <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
-                  Accept all guidelines to continue.
+              {/* Claimed skills */}
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--sp-border)' }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--sp-ink)', marginBottom: 10 }}>
+                  Skills entering assessment
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {claimedSkills.map(skill => (
+                    <span key={skill} className={`sp-tag${profile.claimedSkills.length > 0 ? ' sp-tag-sage' : ''}`}>{skill}</span>
+                  ))}
                 </div>
-              ) : null}
+                {shouldSkipChatbot && (
+                  <p style={{ marginTop: 10, fontSize: 13, color: 'var(--sp-muted)', fontWeight: 500 }}>
+                    No claimed skills. The chatbot interview is skipped and the assessment proceeds directly to skill test.
+                  </p>
+                )}
+              </div>
+            </div>
 
-              {accessError ? (
-                <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
-                  <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
-                  {accessError}
+            <div className="guideline-list">{guidelineItems.map(({id,title,detail,icon:Icon}) => <article key={id}><Icon size={20} /><div><h2>{title}</h2><p>{detail}</p></div></article>)}</div>
+            <label className="guideline-consent"><input type="checkbox" checked={allAccepted} onChange={e=>setAccepted(Object.fromEntries(guidelineItems.map(item=>[item.id,e.target.checked])))} /><span>I have read and agree to the assessment conditions above.</span></label>
+          </section>
+
+          {/* RIGHT SIDEBAR */}
+          <aside style={{ position: 'sticky', top: 76, alignSelf: 'start' }}>
+            <div className="sp-card" style={{ padding: 20 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sp-ink)', margin: '0 0 16px' }}>Candidate brief</h2>
+
+              <div style={{ display: 'grid', gap: 6, marginBottom: 16 }}>
+                {([
+                  ['Candidate',  profile.name],
+                  ['Domain',     profile.domain],
+                  ['Roles',      profile.interestedRoles.join(', ') || 'None'],
+                  ['Resume',     profile.resumeFileName ?? 'Not uploaded'],
+                  ['Transcript', profile.transcriptFileName ?? 'Not uploaded'],
+                ] as [string, string][]).map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      padding: '10px 12px', borderRadius: 8,
+                      background: 'var(--sp-panel)', border: '1px solid var(--sp-border)',
+                    }}
+                  >
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--sp-muted)' }}>{label}</p>
+                    <p style={{ marginTop: 3, fontSize: 13, fontWeight: 600, color: 'var(--sp-ink)', overflowWrap: 'anywhere' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {!allAccepted && (
+                <div className="sp-notice sp-notice-warn" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+                  <WarningCircle size={15} weight="bold" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden />
+                  <span style={{ fontSize: 13 }}>Accept all {guidelineItems.length} guidelines to continue.</span>
                 </div>
-              ) : null}
+              )}
+
+              {accessError && (
+                <div className="sp-notice sp-notice-danger" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+                  <WarningCircle size={15} weight="bold" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden />
+                  <span style={{ fontSize: 13 }}>{accessError}</span>
+                </div>
+              )}
 
               <button
-                className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-skillpath-night px-4 text-base font-black text-skillpath-cream transition hover:bg-skillpath-forest disabled:cursor-not-allowed disabled:bg-skillpath-muted"
                 type="button"
+                className="sp-btn-primary"
+                style={{ width: '100%', height: 44, fontSize: 14 }}
                 disabled={!allAccepted || requestingAccess}
                 onClick={requestAssessmentAccess}
               >
-                {requestingAccess ? 'Requesting access' : shouldSkipChatbot ? 'Continue to skill assessment' : 'Request access and start'}
-                <ArrowRight className="h-5 w-5" weight="bold" aria-hidden="true" />
+                {requestingAccess
+                  ? 'Requesting access...'
+                  : shouldSkipChatbot
+                    ? 'Continue to skill assessment'
+                    : 'Start assessment'}
+                <ArrowRight size={15} weight="bold" aria-hidden />
               </button>
-            </section>
+            </div>
           </aside>
         </div>
       </div>
-    </main>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-md bg-white/8 p-3">
-      <div className="grid h-10 w-10 place-items-center rounded-md bg-skillpath-teal text-skillpath-night">{icon}</div>
-      <div>
-        <p className="text-sm font-bold text-skillpath-cream/60">{label}</p>
-        <p className="text-base font-black text-skillpath-cream">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-skillpath-line bg-white p-3">
-      <p className="font-black text-skillpath-muted">{label}</p>
-      <p className="mt-1 font-black text-skillpath-night">{value}</p>
     </div>
   );
 }

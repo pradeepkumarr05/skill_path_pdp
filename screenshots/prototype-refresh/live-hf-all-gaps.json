@@ -1,0 +1,529 @@
+{
+  "summary": {
+    "passed": true,
+    "provider": "Hugging Face (real hosted inference)",
+    "model": "openai/gpt-oss-120b:cerebras",
+    "syntheticScores": true,
+    "topics": 11,
+    "sessions": 22,
+    "estimatedMinutes": 220,
+    "elapsedSeconds": 6
+  },
+  "plan": {
+    "id": "9bedd519-111e-4832-a359-f5e198f51f0d",
+    "createdAt": "2026-10-07T09:58:42.836Z",
+    "model": "openai/gpt-oss-120b:cerebras",
+    "topics": [
+      {
+        "id": "topic-0",
+        "skill": "HTML",
+        "reason": "Your assessment shows a score of 0 and two unanswered MCQs, indicating that foundational markup concepts need reinforcement before advancing to styling or scripting.",
+        "sessions": [
+          {
+            "id": "topic-0-session-0",
+            "title": "HTML Basics: Document Structure",
+            "choices": [
+              "<head>",
+              "<html>",
+              "<body>",
+              "<meta>"
+            ],
+            "content": "Every web page begins with a doctype declaration that tells the browser which version of HTML to render. The root element <html> encloses the entire document, and it is divided into two primary sections: <head> and <body>. The <head> contains metadata such as <title>, character encoding, and links to external resources like CSS files. The <body> holds the visible content, including headings, paragraphs, images, and links. Understanding the hierarchy—doctype → html → head/body → content—is crucial because browsers rely on this structure to correctly interpret and display the page. Below is a minimal yet complete HTML5 document:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My First Page</title>\n</head>\n<body>\n  <h1>Welcome to My Site</h1>\n  <p>This paragraph demonstrates basic text content.</p>\n</body>\n</html>\n```\n\nNotice the indentation and closing tags; they improve readability and prevent parsing errors. Even though browsers can tolerate some missing tags, writing well‑formed HTML ensures consistent behavior across all user agents and aids accessibility tools.",
+            "minutes": 10,
+            "exercise": "Create a new HTML snippet that includes a <head> with a title \"Demo Page\" and a <body> containing an <h2> heading, a paragraph describing the page, and an image with alt text \"Sample\" (use a placeholder URL). Write the code directly in the response area.",
+            "question": "Which element must appear directly after the <!DOCTYPE html> declaration in a valid HTML5 document?",
+            "objective": "Learn the essential elements that form a valid HTML document and how they nest to create a page skeleton."
+          },
+          {
+            "id": "topic-0-session-1",
+            "title": "Semantic HTML and Void Elements",
+            "choices": [
+              "<div>",
+              "<span>",
+              "<img>",
+              "<p>"
+            ],
+            "content": "Semantic HTML uses tags that describe the purpose of the content they contain, improving accessibility, SEO, and maintainability. Examples include <header> for introductory content, <nav> for navigation links, <article> for independent pieces, and <footer> for concluding information. Void elements, such as <img>, <br>, <hr>, <input>, and <meta>, do not have closing tags because they cannot contain child content. Attempting to close a void element (e.g., <img></img>) is invalid HTML and may cause unexpected rendering. Proper use of semantic tags also allows screen readers to navigate sections more efficiently. Below is an example combining semantic and void elements:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Semantic Example</title>\n</head>\n<body>\n  <header>\n    <h1>Site Title</h1>\n    <nav>\n      <ul>\n        <li><a href=\"#home\">Home</a></li>\n        <li><a href=\"#about\">About</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    <article>\n      <h2>Article Heading</h2>\n      <p>Content of the article.</p>\n      <img src=\"https://via.placeholder.com/150\" alt=\"Placeholder Image\">\n    </article>\n  </main>\n  <footer>\n    <p>&copy; 2026 My Site</p>\n  </footer>\n</body>\n</html>\n```\n\nNotice that <img> is a void element and does not require a closing tag. Using these tags correctly helps browsers and assistive technologies interpret the page structure accurately.",
+            "minutes": 10,
+            "exercise": "Write an HTML fragment that includes a <section> with a <h3> heading, a paragraph, and a self‑closing <hr> element separating it from the next section. Provide the code in the response area.",
+            "question": "Which of the following is a void element that must not have a closing tag?",
+            "objective": "Identify semantic tags that convey meaning to browsers and assistive technologies, and understand the rules for void (self‑closing) elements."
+          }
+        ]
+      },
+      {
+        "id": "topic-1",
+        "skill": "CSS",
+        "reason": "Your assessment indicates a score of 0 with two unanswered MCQs, suggesting that foundational styling concepts need practice before tackling layout or advanced selectors.",
+        "sessions": [
+          {
+            "id": "topic-1-session-0",
+            "title": "CSS Fundamentals: Selectors and Box Model",
+            "choices": [
+              "p",
+              ".intro",
+              "#header",
+              "div > span"
+            ],
+            "content": "CSS (Cascading Style Sheets) applies visual styles to HTML elements. Selectors define which elements receive a rule; they can be type selectors (e.g., p), class selectors (e.g., .highlight), ID selectors (e.g., #main), or attribute selectors (e.g., [type=\"text\"]). The cascade resolves conflicts by specificity and source order. Every element is rendered as a rectangular box consisting of content, padding, border, and margin. The content area holds the actual text or media; padding adds space inside the border; the border surrounds the padding; margin creates space outside the border, separating the element from its neighbors. Modifying any of these properties changes layout. Below is an example that styles a paragraph with a class \"note\" and demonstrates the box model:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <style>\n    .note {\n      width: 200px;               /* content width */\n      padding: 10px;              /* space inside border */\n      border: 2px solid #4CAF50;  /* border thickness and color */\n      margin: 15px;               /* space outside border */\n      background-color: #e8f5e9;\n    }\n  </style>\n</head>\n<body>\n  <p class=\"note\">This paragraph demonstrates the CSS box model.</p>\n</body>\n</html>\n```\n\nIf you inspect the element in a browser's developer tools, you will see the total rendered width equals content width + left/right padding + left/right border + left/right margin. Mastering selectors and the box model is essential for any layout work.",
+            "minutes": 10,
+            "exercise": "Add a CSS rule that selects all <h2> elements and gives them a bottom margin of 20px, a font size of 24px, and a text color of #333. Write the CSS code directly in the response area.",
+            "question": "Which selector has the highest specificity?",
+            "objective": "Understand how CSS selectors target elements and how the box model determines element dimensions and spacing."
+          },
+          {
+            "id": "topic-1-session-1",
+            "title": "Responsive Layout with Flexbox",
+            "choices": [
+              "Stacks items horizontally",
+              "Stacks items vertically",
+              "Reverses the order of items",
+              "Centers items along the main axis"
+            ],
+            "content": "Flexbox simplifies the creation of one‑dimensional layouts that adapt to different screen sizes. By setting a container's display property to flex, its direct children become flex items. The main axis runs horizontally by default, while the cross axis runs vertically. Properties such as justify-content control spacing along the main axis (e.g., space-between, center), and align-items aligns items on the cross axis (e.g., stretch, flex-start). Flex items can grow or shrink using flex-grow and flex-shrink, allowing them to fill available space or shrink when needed. The following example creates a navigation bar that evenly distributes three links across the width of the viewport and collapses them into a vertical stack on narrow screens using a media query:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <style>\n    .nav {\n      display: flex;\n      justify-content: space-around; /* distribute items */\n      background: #2196F3;\n      padding: 10px;\n    }\n    .nav a {\n      color: white;\n      text-decoration: none;\n      font-weight: bold;\n    }\n    @media (max-width: 500px) {\n      .nav {\n        flex-direction: column;   /* stack vertically */\n        align-items: center;\n      }\n    }\n  </style>\n</head>\n<body>\n  <nav class=\"nav\">\n    <a href=\"#home\">Home</a>\n    <a href=\"#services\">Services</a>\n    <a href=\"#contact\">Contact</a>\n  </nav>\n</body>\n</html>\n```\n\nResize the browser window to see the navigation switch from a horizontal row to a vertical column when the width drops below 500px. Flexbox automatically recalculates item sizes, making responsive design more straightforward than using floats or inline‑block techniques.",
+            "minutes": 10,
+            "exercise": "Write a CSS rule that makes a container with class \"cards\" display its children in a row, wraps them onto a new line if needed, and adds a 10px gap between items. Provide only the CSS code in the response area.",
+            "question": "What does the CSS property 'flex-direction: column' do to flex items?",
+            "objective": "Learn how to create flexible, responsive row or column layouts using the CSS Flexbox module."
+          }
+        ]
+      },
+      {
+        "id": "topic-2",
+        "skill": "JavaScript",
+        "reason": "Your assessment shows a score of 0 and a recommendation for practice, indicating foundational gaps in core JavaScript concepts that are essential before moving to TypeScript.",
+        "sessions": [
+          {
+            "id": "topic-2-session-0",
+            "title": "Variables and Data Types",
+            "choices": [
+              "A const variable cannot be reassigned, and the value it references is always immutable.",
+              "A const variable can be redeclared within the same block scope.",
+              "A const variable cannot be reassigned, but if it holds an object, the object's properties can still be changed.",
+              "A const variable behaves exactly like a var variable but with block scope."
+            ],
+            "content": "JavaScript provides three ways to declare variables: var, let, and const. The var keyword is function‑scoped and can be redeclared, which often leads to unexpected bugs due to hoisting. let introduces block‑scoping, preventing accidental redeclaration within the same block, and is the preferred choice for mutable values. const also uses block‑scoping but creates a read‑only binding; the variable identifier cannot be reassigned, though the value it points to may still be mutable if it is an object or array. JavaScript's primitive types include Number, String, Boolean, Null, Undefined, Symbol, and BigInt. Numbers are double‑precision floating‑point values; strings are immutable sequences of UTF‑16 code units; booleans represent true/false; null is an intentional absence of any object value; undefined indicates a variable that has been declared but not assigned a value; Symbol creates unique identifiers; and BigInt enables representation of integers beyond the safe 2^53‑1 limit. Understanding these basics is crucial for writing predictable code and for later TypeScript type annotations.",
+            "minutes": 10,
+            "exercise": "Write a snippet that declares a mutable counter using let, a constant PI using const, and demonstrates the difference between undefined and null by logging their types and values.",
+            "question": "Which statement about const is correct?",
+            "objective": "Learn the differences between var, let, const and the primary primitive data types in JavaScript."
+          },
+          {
+            "id": "topic-2-session-1",
+            "title": "Asynchronous Programming with Promises",
+            "choices": [
+              "It receives the resolved value and can transform it before the next then.",
+              "It executes a callback only if the Promise was fulfilled successfully.",
+              "It runs a callback after the Promise settles, regardless of fulfillment or rejection.",
+              "It replaces the need for both then and catch handlers."
+            ],
+            "content": "Asynchronous operations in JavaScript are often handled with Promises, which represent a value that may be available now, later, or never. A Promise is created with the constructor new Promise((resolve, reject) => { ... }). Inside the executor function, you call resolve(value) when the operation succeeds, or reject(error) when it fails. Consumers attach handlers using then(onFulfilled) for successful resolution and catch(onRejected) for errors. Promise chaining allows sequential asynchronous steps: each then returns a new Promise, enabling the next then to receive the transformed result. The finally method runs a callback regardless of outcome, useful for cleanup. Importantly, unhandled rejections propagate up the chain, so always provide a catch or finally to avoid silent failures. Understanding the event loop, microtasks, and how Promises fit into it helps avoid race conditions and ensures predictable execution order.",
+            "minutes": 10,
+            "exercise": "Create a Promise that resolves after 2 seconds with the message \"Done\". Chain a then to log the message, and add a catch to handle any potential errors.",
+            "question": "What does the finally method do in a Promise chain?",
+            "objective": "Understand how to create, chain, and handle errors with JavaScript Promises."
+          }
+        ]
+      },
+      {
+        "id": "topic-3",
+        "skill": "TypeScript",
+        "reason": "Your assessment shows a score of 0 and a practice recommendation, indicating that you need to build a solid TypeScript foundation before applying it to larger projects.",
+        "sessions": [
+          {
+            "id": "topic-3-session-0",
+            "title": "Basic Types and Interfaces",
+            "choices": [
+              "let value: string | number;",
+              "let value = string | number;",
+              "let value: (string, number);",
+              "let value: any;"
+            ],
+            "content": "TypeScript extends JavaScript by adding static type annotations that are checked at compile time. Primitive types include number, string, boolean, null, undefined, symbol, and bigint, mirroring JavaScript's runtime types. You can annotate variables, function parameters, and return types to catch mismatches early. Interfaces provide a way to describe the shape of an object, specifying required properties, optional properties (using ?), and readonly modifiers. For example, interface Person { name: string; age?: number; readonly id: string; } describes an object that must have a name and id, while age is optional. TypeScript also supports union types (e.g., string | number) and literal types (e.g., 'admin' | 'user'), enabling precise modeling of data structures. Using these features helps prevent common bugs, such as passing the wrong type to a function or accessing undefined properties.",
+            "minutes": 10,
+            "exercise": "Define an interface called \"Product\" with properties: id (string, readonly), name (string), price (number), and an optional description (string). Then create a variable of type Product and assign appropriate values.",
+            "question": "Which of the following correctly declares a variable that can hold either a string or a number?",
+            "objective": "Introduce TypeScript's type annotations, primitive types, and how interfaces describe object shapes."
+          },
+          {
+            "id": "topic-3-session-1",
+            "title": "Generics and Advanced Types",
+            "choices": [
+              "T must be a string literal type.",
+              "T must be a type that can be used as an object key, i.e., string, number, or symbol.",
+              "T must be an object with a numeric index signature.",
+              "T must be a union of all possible primitive types."
+            ],
+            "content": "Generics enable you to write reusable components that work with a variety of types while preserving type information. A generic type parameter is declared inside angle brackets, e.g., function identity<T>(arg: T): T { return arg; }. This function can accept any type, and the compiler infers the specific type on each call. Constraints restrict the set of types a generic can accept, using the extends keyword. For instance, function getLength<T extends { length: number }>(obj: T): number { return obj.length; } ensures that the argument has a length property. TypeScript also provides utility types like Partial<T>, Readonly<T>, and Pick<T, K>. Advanced techniques such as conditional types (e.g., T extends U ? X : Y) allow you to express type transformations based on relationships. Mastering generics leads to type‑safe libraries and APIs that adapt to many data shapes without sacrificing compile‑time safety.",
+            "minutes": 10,
+            "exercise": "Write a generic function called \"wrapInArray\" that takes a value of any type and returns an array containing that value. Use a type parameter to preserve the input type.",
+            "question": "What does the constraint \"T extends keyof any\" guarantee about the generic type T?",
+            "objective": "Learn how to write generic functions and use constraints to enforce type relationships."
+          }
+        ]
+      },
+      {
+        "id": "topic-4",
+        "skill": "Node.js",
+        "reason": "Your recent assessment shows a score of 0 and no correct MCQ answers, indicating foundational gaps in server‑side JavaScript. Practice is recommended to build core competence before moving to front‑end frameworks.",
+        "sessions": [
+          {
+            "id": "topic-4-session-0",
+            "title": "Node.js Modules and a Simple HTTP Server",
+            "choices": [
+              "It can load ES modules without any configuration.",
+              "It caches the exported value after the first load.",
+              "It always returns a copy of the exported object.",
+              "It works only with built‑in modules, not user files."
+            ],
+            "content": "Node.js uses a module system called CommonJS. Each file is treated as a separate module, and you expose functionality with module.exports while importing with require(). For example, you can create a utility module that exports a function:\n\n```js\n// utils.js\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\nmodule.exports = { greet };\n```\n\nIn another file you import it:\n\n```js\nconst { greet } = require('./utils');\nconsole.log(greet('World'));\n```\n\nWhen you need to serve HTTP traffic, the built‑in http module provides a low‑level API. The following code creates a server that responds with \"Hello from Node\" for every request:\n\n```js\nconst http = require('http');\nconst server = http.createServer((req, res) => {\n  res.writeHead(200, { 'Content-Type': 'text/plain' });\n  res.end('Hello from Node');\n});\nserver.listen(3000, () => console.log('Server listening on http://localhost:3000'));\n```\n\nKey points: the callback receives request and response objects; writeHead sets status and headers; end sends the body and closes the connection. This pattern forms the basis for more complex frameworks like Express.\n",
+            "minutes": 10,
+            "exercise": "Write a Node.js script named `server.js` that creates an HTTP server listening on port 4000. The server should respond with a JSON object `{ \"status\": \"ok\" }` and set the appropriate `Content-Type` header.",
+            "question": "Which statement about the `require` function in Node.js is correct?",
+            "objective": "Understand CommonJS modules, the difference between require and import, and create a basic HTTP server."
+          },
+          {
+            "id": "topic-4-session-1",
+            "title": "Asynchronous I/O with Callbacks and Promises",
+            "choices": [
+              "The error is silently ignored.",
+              "The function returns a rejected Promise.",
+              "The error is converted into a resolved Promise.",
+              "Node.js crashes the process."
+            ],
+            "content": "Node.js is built around a non‑blocking I/O model. The `fs` module provides both callback‑based and Promise‑based APIs. A callback version reads a file like this:\n\n```js\nconst fs = require('fs');\nfs.readFile('data.txt', 'utf8', (err, data) => {\n  if (err) {\n    console.error('Read error:', err);\n    return;\n  }\n  console.log('File contents:', data);\n});\n```\n\nIf you prefer Promises, you can use `fs.promises`:\n\n```js\nconst { readFile } = require('fs').promises;\nasync function showFile() {\n  try {\n    const data = await readFile('data.txt', 'utf8');\n    console.log('File contents:', data);\n  } catch (e) {\n    console.error('Read error:', e);\n  }\n}\nshowFile();\n```\n\nBoth approaches avoid blocking the event loop. The callback style can lead to \"callback hell\" when many steps are chained, while async/await with Promises yields clearer, linear‑looking code. Understanding both is essential because many legacy libraries still expose callback APIs.\n",
+            "minutes": 10,
+            "exercise": "Using the Promise‑based `fs` API, write an async function `copyFile(src, dest)` that reads the contents of `src` and writes them to `dest`. Handle errors with try/catch and log a success message when done.",
+            "question": "What happens if an error is thrown inside an async function before any `await` statements?",
+            "objective": "Learn how Node.js handles asynchronous file operations using callbacks and Promises."
+          }
+        ]
+      },
+      {
+        "id": "topic-5",
+        "skill": "React",
+        "reason": "Your assessment indicates a score of 0 and no correct MCQ answers, showing that foundational React concepts such as components, JSX, and state are missing. Targeted practice will help you build a solid front‑end foundation.",
+        "sessions": [
+          {
+            "id": "topic-5-session-0",
+            "title": "Functional Components, JSX, and Props",
+            "choices": [
+              "JSX can contain multiple top‑level elements without a wrapper.",
+              "JSX is optional; you can only use plain JavaScript objects.",
+              "JSX expressions must be wrapped in a single parent element.",
+              "JSX is interpreted by the browser directly."
+            ],
+            "content": "React encourages building UI as a tree of reusable components. A functional component is a plain JavaScript function that returns JSX, a syntax extension that looks like HTML but is compiled to `React.createElement` calls. Example of a greeting component:\n\n```jsx\nfunction Greeting({ name }) {\n  return <h1>Hello, {name}!</h1>;\n}\n\n// Usage in another component\nfunction App() {\n  return <Greeting name=\"Alice\" />;\n}\n```\n\nJSX must have a single root element, so you often wrap multiple elements in a `<div>` or React fragment (`<>...</>`). Props are read‑only inputs; they flow from parent to child. When a prop changes, React re‑renders the affected component tree efficiently using its virtual DOM diffing algorithm.\n",
+            "minutes": 10,
+            "exercise": "Write a functional component `UserCard` that receives `props` with `firstName`, `lastName`, and `email`. Render a `<div>` containing an `<h2>` with the full name and a `<p>` with the email address.",
+            "question": "Which of the following is true about JSX?",
+            "objective": "Create simple functional components, use JSX syntax, and pass data via props."
+          },
+          {
+            "id": "topic-5-session-1",
+            "title": "State and Effect Hooks",
+            "choices": [
+              "It determines the order of multiple effects.",
+              "It tells React which values to watch for changes to re‑run the effect.",
+              "It caches the effect's return value.",
+              "It disables the effect when set to an empty array."
+            ],
+            "content": "React's Hooks let functional components hold mutable state and run side effects. `useState` returns a state variable and a setter function. Example of a counter:\n\n```jsx\nimport { useState } from 'react';\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <p>Current: {count}</p>\n      <button onClick={() => setCount(count + 1)}>Increment</button>\n    </div>\n  );\n}\n```\n\n`useEffect` runs after render and can clean up resources. A common pattern is fetching data on mount:\n\n```jsx\nimport { useState, useEffect } from 'react';\nfunction DataFetcher() {\n  const [data, setData] = useState(null);\n  useEffect(() => {\n    fetch('/api/info')\n      .then(r => r.json())\n      .then(setData)\n      .catch(console.error);\n  }, []); // empty dependency array => run once\n  return data ? <pre>{JSON.stringify(data, null, 2)}</pre> : <p>Loading...</p>;\n}\n```\n\nThe dependency array tells React when to re‑run the effect; omitting it runs the effect after every render, which can cause infinite loops if the effect updates state.\n",
+            "minutes": 10,
+            "exercise": "Create a component `Timer` that displays seconds elapsed since it mounted. Use `useState` for the count and `useEffect` with `setInterval` to increment the count every 1000 ms. Remember to clean up the interval on unmount.",
+            "question": "What is the purpose of the dependency array in `useEffect`?",
+            "objective": "Manage component state with `useState` and perform side effects with `useEffect`."
+          }
+        ]
+      },
+      {
+        "id": "topic-6",
+        "skill": "Data Structures and Algorithms",
+        "reason": "Your assessment score of 0 indicates limited exposure to core concepts; focused practice will help you build a solid foundation in data structures and algorithmic thinking.",
+        "sessions": [
+          {
+            "id": "topic-6-session-0",
+            "title": "Arrays and Linked Lists Basics",
+            "choices": [
+              "Both operations are O(1).",
+              "Array access is O(log n) while linked‑list access is O(1).",
+              "Array access is O(1) while linked‑list access is O(n).",
+              "Both operations are O(n)."
+            ],
+            "content": "Arrays store elements in contiguous memory, allowing O(1) random access by index. However, inserting or deleting in the middle requires shifting elements, leading to O(n) time. Linked lists consist of nodes where each node holds a value and a reference to the next node. This structure enables O(1) insertion or deletion at the head, but random access requires traversing nodes sequentially, resulting in O(n) time. Below is a simple JavaScript implementation of a singly linked list with methods to append a node and to print the list:\n\n```javascript\nclass ListNode {\n  constructor(value) {\n    this.value = value;\n    this.next = null;\n  }\n}\n\nclass SinglyLinkedList {\n  constructor() {\n    this.head = null;\n  }\n\n  append(value) {\n    const newNode = new ListNode(value);\n    if (!this.head) {\n      this.head = newNode;\n      return;\n    }\n    let curr = this.head;\n    while (curr.next) {\n      curr = curr.next;\n    }\n    curr.next = newNode;\n  }\n\n  print() {\n    let curr = this.head;\n    const values = [];\n    while (curr) {\n      values.push(curr.value);\n      curr = curr.next;\n    }\n    console.log(values.join(' -> '));\n  }\n}\n```\nUnderstanding these trade‑offs is essential for selecting the appropriate structure for a given problem.",
+            "minutes": 10,
+            "exercise": "Write a function `reverseLinkedList(list)` that takes a `SinglyLinkedList` instance and reverses its nodes in place. After reversal, calling `list.print()` should display the elements in reverse order.",
+            "question": "Which statement correctly describes the time complexity of accessing the i‑th element in an array versus a singly linked list?",
+            "objective": "Understand array indexing, memory layout, and basic singly linked list operations such as insertion and traversal."
+          },
+          {
+            "id": "topic-6-session-1",
+            "title": "Binary Search and Recursion",
+            "choices": [
+              "When the middle element equals the target.",
+              "When the left index exceeds the right index.",
+              "When the array length becomes exactly two.",
+              "When the target is less than the first element."
+            ],
+            "content": "Binary search repeatedly halves a sorted array to locate a target value. At each step, it compares the target with the middle element; if they differ, the search continues in the appropriate half. This yields a logarithmic O(log n) time complexity. Recursion naturally expresses this process: a function calls itself with a reduced sub‑array until a base case is reached. Below is a recursive JavaScript implementation of binary search that returns the index of the target or -1 if not found:\n\n```javascript\nfunction binarySearch(arr, target, left = 0, right = arr.length - 1) {\n  if (left > right) return -1; // base case: not found\n  const mid = Math.floor((left + right) / 2);\n  if (arr[mid] === target) return mid; // found\n  if (arr[mid] > target) {\n    return binarySearch(arr, target, left, mid - 1);\n  } else {\n    return binarySearch(arr, target, mid + 1, right);\n  }\n}\n```\nRecursion must have a clear base case to avoid infinite loops, and each recursive call reduces the problem size, guaranteeing termination. Mastering this pattern prepares you for many classic algorithms such as quicksort and depth‑first search.",
+            "minutes": 10,
+            "exercise": "Implement a recursive function `binarySearchRecursive(arr, target)` that hides the `left` and `right` parameters from the caller. Test it with a sorted array like `[1,3,5,7,9]` and target `7`.",
+            "question": "What is the essential base case condition for a correct recursive binary search implementation?",
+            "objective": "Apply binary search on sorted arrays and understand how recursion simplifies divide‑and‑conquer algorithms."
+          }
+        ]
+      },
+      {
+        "id": "topic-7",
+        "skill": "REST APIs",
+        "reason": "A score of 0 indicates you have not yet demonstrated competence in designing or consuming RESTful services; targeted practice will help you master HTTP fundamentals and proper endpoint design.",
+        "sessions": [
+          {
+            "id": "topic-7-session-0",
+            "title": "HTTP Methods and Status Codes",
+            "choices": [
+              "POST",
+              "PUT",
+              "GET",
+              "DELETE"
+            ],
+            "content": "RESTful services rely on the semantics of HTTP. GET retrieves resources without side effects and should be safe and idempotent, returning 200 (OK) on success. POST creates a new resource, often returning 201 (Created) along with a Location header pointing to the new URI. PUT updates an existing resource and is idempotent; repeated identical requests yield the same state, typically returning 200 (OK) or 204 (No Content). DELETE removes a resource and is also idempotent, returning 200 (OK), 202 (Accepted), or 204 (No Content) when successful. Below is a minimal Express.js server demonstrating each method with appropriate status codes:\n\n```javascript\nconst express = require('express');\nconst app = express();\napp.use(express.json());\n\nlet items = [];\n\napp.get('/items', (req, res) => {\n  res.status(200).json(items);\n});\n\napp.post('/items', (req, res) => {\n  const newItem = req.body;\n  items.push(newItem);\n  res.status(201).location(`/items/${items.length - 1}`).json(newItem);\n});\n\napp.put('/items/:id', (req, res) => {\n  const id = Number(req.params.id);\n  if (id < 0 || id >= items.length) return res.sendStatus(404);\n  items[id] = req.body;\n  res.sendStatus(204);\n});\n\napp.delete('/items/:id', (req, res) => {\n  const id = Number(req.params.id);\n  if (id < 0 || id >= items.length) return res.sendStatus(404);\n  items.splice(id, 1);\n  res.sendStatus(204);\n});\n\napp.listen(3000, () => console.log('API listening on port 3000'));\n```\nUnderstanding these conventions ensures clients can correctly interpret responses and interact predictably with the API.",
+            "minutes": 10,
+            "exercise": "Add a new route `POST /users` that accepts a JSON body with a `name` field, stores it in an in‑memory array, and returns status 201 with the created user object.",
+            "question": "Which HTTP method is most appropriate for retrieving a resource without causing any side effects?",
+            "objective": "Learn the appropriate use of GET, POST, PUT, DELETE methods and the meaning of common HTTP status codes."
+          },
+          {
+            "id": "topic-7-session-1",
+            "title": "Designing Resource URLs and JSON Responses",
+            "choices": [
+              "POST",
+              "PATCH",
+              "GET",
+              "PUT"
+            ],
+            "content": "A clean REST API uses nouns for resources and hierarchical paths to express relationships. For example, `/users` represents the collection of user entities, while `/users/42` addresses the specific user with ID 42. Responses should be JSON objects or arrays, and error conditions should include meaningful status codes and messages. Below is an Express.js example that defines a GET endpoint returning a user object if found, or a 404 error otherwise:\n\n```javascript\nconst express = require('express');\nconst app = express();\napp.use(express.json());\n\nconst users = [\n  { id: 1, name: 'Alice' },\n  { id: 2, name: 'Bob' }\n];\n\napp.get('/users/:id', (req, res) => {\n  const userId = Number(req.params.id);\n  const user = users.find(u => u.id === userId);\n  if (!user) {\n    return res.status(404).json({ error: 'User not found' });\n  }\n  res.status(200).json(user);\n});\n\napp.listen(3000, () => console.log('Server running'));\n```\nNotice the use of `res.status(...).json(...)` to set both the HTTP status and the response body. Consistent URL design and response formatting make APIs easier to consume and document.",
+            "minutes": 10,
+            "exercise": "Create a GET endpoint `/products/:id` that returns a product object with fields `id` and `name`. If the product does not exist, respond with 404 and a JSON error message.",
+            "question": "Which HTTP method is idempotent and can be safely repeated without changing server state, making it suitable for updating a resource entirely?",
+            "objective": "Structure RESTful endpoint URLs logically and return well‑formed JSON payloads with proper status handling."
+          }
+        ]
+      },
+      {
+        "id": "topic-8",
+        "skill": "PostgreSQL",
+        "reason": "Assessment shows practice recommended for PostgreSQL; scores indicate foundational concepts need reinforcement.",
+        "sessions": [
+          {
+            "id": "topic-8-session-0",
+            "title": "Understanding Tables and Data Types",
+            "choices": [
+              "UNIQUE",
+              "PRIMARY KEY",
+              "CHECK",
+              "NOT NULL"
+            ],
+            "content": "PostgreSQL stores data in relational tables where each column has a defined data type. Common types include INTEGER for whole numbers, VARCHAR(n) for variable‑length strings, TEXT for unlimited text, DATE for calendar dates, and BOOLEAN for true/false values. When creating a table, you declare each column with its type and optionally add constraints such as NOT NULL, UNIQUE, or PRIMARY KEY. The PRIMARY KEY constraint uniquely identifies each row and automatically creates a unique index, which speeds up look‑ups. Choosing the right data type improves storage efficiency and query performance. For example, using SMALLINT instead of INTEGER for a column that only stores values 0‑255 reduces disk space. Additionally, PostgreSQL supports domain types and ENUMs for more expressive schemas. Understanding these fundamentals enables you to design robust schemas that scale and maintain data integrity.\n\nExample:\n```sql\nCREATE TABLE employees (\n    employee_id SERIAL PRIMARY KEY,\n    first_name VARCHAR(50) NOT NULL,\n    last_name VARCHAR(50) NOT NULL,\n    hire_date DATE NOT NULL,\n    salary NUMERIC(10,2) CHECK (salary > 0),\n    is_active BOOLEAN DEFAULT TRUE\n);\n```",
+            "minutes": 10,
+            "exercise": "Write a CREATE TABLE statement for a `products` table with columns: `product_id` (auto‑increment primary key), `name` (VARCHAR up to 100, not null), `price` (NUMERIC with two decimal places, must be positive), `in_stock` (BOOLEAN default true), and `created_at` (TIMESTAMP with default CURRENT_TIMESTAMP).",
+            "question": "Which constraint automatically creates a unique index in PostgreSQL?",
+            "objective": "Learn how to define tables, choose appropriate data types, and enforce primary keys in PostgreSQL."
+          },
+          {
+            "id": "topic-8-session-1",
+            "title": "Advanced Queries: Joins and Indexes",
+            "choices": [
+              "Only rows that have matches in both tables",
+              "Rows from the left table with NULLs for right‑hand columns",
+              "Rows from the right table with NULLs for left‑hand columns",
+              "An empty result set"
+            ],
+            "content": "Joins combine rows from two or more tables based on related columns. An INNER JOIN returns rows with matching values in both tables, while LEFT (or RIGHT) OUTER JOIN returns all rows from one table and matching rows from the other, filling non‑matching columns with NULL. Proper indexing is crucial: an index on the join column allows PostgreSQL to locate matching rows quickly, reducing the need for full table scans. Composite indexes can cover multiple columns, and partial indexes can target rows that meet a condition, further optimizing performance. EXPLAIN ANALYZE reveals the query plan and shows whether indexes are used. Understanding when to create indexes—especially on foreign key columns used in joins—helps maintain responsive applications as data volume grows.\n\nExample:\n```sql\n-- Create indexes on foreign key columns\nCREATE INDEX idx_orders_customer_id ON orders(customer_id);\n\n-- Perform a join using the indexed column\nSELECT o.order_id, c.first_name, c.last_name, o.total_amount\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE o.order_date >= CURRENT_DATE - INTERVAL '30 days';\n```",
+            "minutes": 10,
+            "exercise": "Given tables `orders(order_id SERIAL PRIMARY KEY, customer_id INT, order_date DATE)` and `customers(customer_id SERIAL PRIMARY KEY, email VARCHAR)`, write a query that returns each order's ID and the customer's email, including orders that have no matching customer (use a LEFT JOIN). Also, create an index that would help this query.",
+            "question": "What does a LEFT OUTER JOIN return when there is no matching row in the right‑hand table?",
+            "objective": "Master inner and outer joins, and learn how indexes improve query performance in PostgreSQL."
+          }
+        ]
+      },
+      {
+        "id": "topic-9",
+        "skill": "MongoDB",
+        "reason": "Assessment shows practice recommended for MongoDB; scores indicate need for hands‑on experience with document operations and aggregation.",
+        "sessions": [
+          {
+            "id": "topic-9-session-0",
+            "title": "Document Structure and CRUD Basics",
+            "choices": [
+              "String",
+              "Number",
+              "ObjectId",
+              "UUID"
+            ],
+            "content": "MongoDB stores data as BSON documents, which are JSON‑like structures that can contain nested objects and arrays. Each document resides in a collection, and collections are analogous to tables in relational databases but without a fixed schema. The `_id` field is automatically added to every document and serves as a unique identifier; if omitted, MongoDB generates an ObjectId. CRUD operations are performed via methods such as `insertOne`, `find`, `updateOne`, and `deleteOne`. Because the schema is flexible, you can add new fields to documents without affecting existing ones, enabling rapid iteration. However, careful design of indexes—especially on fields frequently queried—remains essential for performance. The driver returns Promises, allowing async/await syntax for clean code.\n\nExample:\n```js\nconst { MongoClient } = require('mongodb');\nconst client = new MongoClient('mongodb://localhost:27017');\nawait client.connect();\nconst db = client.db('shop');\nconst products = db.collection('products');\nawait products.insertOne({ name: 'Laptop', price: 1299.99, inStock: true });\nconst item = await products.findOne({ name: 'Laptop' });\nconsole.log(item);\nawait client.close();\n```",
+            "minutes": 10,
+            "exercise": "Using the same `products` collection, write code that updates the `price` of the document where `name` is \"Laptop\" to 1199.99, and then retrieves the updated document to verify the change.",
+            "question": "What is the default type of the automatically generated `_id` field in MongoDB?",
+            "objective": "Understand MongoDB's flexible document model and perform basic create, read, update, and delete operations using the Node.js driver."
+          },
+          {
+            "id": "topic-9-session-1",
+            "title": "Aggregation Framework and Indexes",
+            "choices": [
+              "$group",
+              "$project",
+              "$match",
+              "$sort"
+            ],
+            "content": "The aggregation framework processes data through a sequence of stages, each transforming the documents. Common stages include `$match` for filtering, `$group` for grouping and calculating aggregates, `$project` for reshaping, and `$sort` for ordering. Indexes can accelerate `$match` and `$sort` stages, especially when the pipeline begins with a `$match` that can be satisfied by an index. For example, an index on `category` speeds up a `$match` that filters by that field. The `$group` stage can use the `_id` field to define grouping keys, and accumulator operators like `$sum`, `$avg`, and `$push` compute results. Understanding the order of stages and index usage is key to building performant pipelines.\n\nExample:\n```js\nconst sales = db.collection('sales');\nawait sales.createIndex({ productId: 1, saleDate: 1 });\nconst pipeline = [\n  { $match: { saleDate: { $gte: new Date('2023-01-01') } } },\n  { $group: { _id: '$productId', totalQty: { $sum: '$quantity' } } },\n  { $sort: { totalQty: -1 } }\n];\nconst results = await sales.aggregate(pipeline).toArray();\nconsole.log(results);\n```",
+            "minutes": 10,
+            "exercise": "Write an aggregation pipeline for a `orders` collection that (1) filters orders placed in the last 7 days, (2) groups by `customerId` to calculate the total amount spent (`$sum` of `orderTotal`), and (3) sorts the results descending by total spent. Include an index creation statement that would help the `$match` stage.",
+            "question": "In an aggregation pipeline, which stage must appear first to take advantage of an index on the filtered field?",
+            "objective": "Learn to build aggregation pipelines for data analysis and create indexes that support efficient pipeline stages."
+          }
+        ]
+      },
+      {
+        "id": "topic-10",
+        "skill": "Git",
+        "reason": "Your assessment shows a score of 0 and a recommendation for practice, indicating that foundational Git concepts need reinforcement before advancing to more complex workflows.",
+        "sessions": [
+          {
+            "id": "topic-10-session-0",
+            "title": "Understanding Git Basics",
+            "choices": [
+              "git commit",
+              "git add",
+              "git push",
+              "git merge"
+            ],
+            "content": "Git is a distributed version‑control system that tracks changes to files over time. To start using Git, you first create a repository with `git init`, which generates a hidden `.git` folder containing all metadata. After adding files to your working directory, you must stage them with `git add <path>`; this tells Git which changes you intend to include in the next snapshot. Once staged, `git commit -m \"message\"` records a new commit, capturing the current state of the staged files and storing a unique SHA‑1 identifier. Commits form a directed acyclic graph, allowing you to traverse history, revert changes, or branch off. Understanding the staging area is crucial because it separates the act of editing files from the act of recording a snapshot, giving you fine‑grained control over what gets versioned. Below is a typical workflow:\n\n```bash\n# Create a new repository\nmkdir my‑project && cd my‑project\ngit init\n\n# Create a file and view its status\necho \"Hello, Git!\" > hello.txt\ngit status\n\n# Stage the new file\ngit add hello.txt\n\n# Commit with a descriptive message\ngit commit -m \"Add hello.txt with greeting\"\n```\n\nEach command interacts with the repository in a specific way: `git init` sets up the repo, `git status` shows untracked and staged files, `git add` moves changes to the index, and `git commit` records a snapshot. Mastering these basics provides the foundation for more advanced operations like branching, merging, and rebasing.",
+            "minutes": 10,
+            "exercise": "In the text box below, write the exact sequence of Git commands you would use to (1) create a new directory called `demo`, (2) initialize a Git repository inside it, (3) create a file named `app.js` with any content, (4) stage the file, and (5) commit it with the message \"Initial commit\".",
+            "question": "Which Git command is used to stage changes before committing?",
+            "objective": "Learn how to initialize a repository, stage changes, and create commits using the command line."
+          },
+          {
+            "id": "topic-10-session-1",
+            "title": "Branching and Merging",
+            "choices": [
+              "git branch",
+              "git checkout -b",
+              "git merge",
+              "git pull"
+            ],
+            "content": "Branching allows developers to work on isolated features or bug fixes without affecting the main codebase. A new branch is created with `git branch <name>`; to start working on it immediately, you can use `git checkout -b <name>`, which both creates and switches to the branch. While on a branch, you can modify files, stage, and commit as usual. When the feature is complete, you merge it back into the target branch (often `main` or `master`) using `git merge <feature-branch>`. If both branches have edited the same lines, Git will flag a merge conflict, requiring manual resolution before completing the merge. After resolving conflicts, you add the resolved files and commit the merge. Below is a typical branching workflow:\n\n```bash\n# Ensure you are on main and up to date\ngit checkout main\ngit pull\n\n# Create and switch to a new feature branch\ngit checkout -b feature/login\n\n# Make changes, stage, and commit\necho \"// login logic\" >> login.js\ngit add login.js\ngit commit -m \"Add login feature\"\n\n# Switch back to main and merge the feature\ngit checkout main\ngit merge feature/login\n```\n\nIf the merge succeeds without conflicts, Git creates a new commit that combines the histories. If conflicts arise, Git marks the conflicted files, and you must edit them to choose the desired version, then `git add` the resolved files and `git commit` to finalize the merge. Understanding these steps is essential for collaborative development and continuous integration pipelines.",
+            "minutes": 10,
+            "exercise": "Write the series of Git commands you would use to (1) create a branch named `experiment`, (2) switch to it, (3) create a file `test.txt` with any content, (4) stage and commit the file with the message \"Add test file\", and (5) switch back to `main` without merging the branch.",
+            "question": "Which command creates a new branch without switching to it?",
+            "objective": "Learn how to create, switch, and merge branches, and understand basic conflict resolution."
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "HTML",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "CSS",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "JavaScript",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "TypeScript",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "React",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "Node.js",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "REST APIs",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "Data Structures and Algorithms",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "PostgreSQL",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "MongoDB",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      },
+      {
+        "mcq": 0,
+        "chat": null,
+        "score": 0,
+        "skill": "Git",
+        "status": "Practice recommended",
+        "questions": 2,
+        "skippable": false
+      }
+    ],
+    "estimatedMinutes": 220,
+    "completed": []
+  }
+}

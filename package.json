@@ -4,11 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:learning": "node --test server/learningPolicy.test.mjs server/learning.integration.test.mjs",
     "dev": "node server/dev.mjs",
     "dev:client": "vite --host 0.0.0.0",
     "dev:api": "node server/index.mjs",
     "migrate": "node server/migrate.mjs",
-    "test:api": "node --test server/integration.test.mjs",
+    "test:api": "node scripts/api-regression.mjs",
+    "test:prototype": "node scripts/prototype-ui-test.mjs",
+    "test:proctor": "node scripts/proctor-ui-test.mjs",
+    "test:assessment-browser": "node scripts/assessment-browser-round.mjs",
+    "test:live-interview": "node scripts/live-interview-check.mjs",
+    "test:live-roadmap": "node scripts/live-learning-check.mjs",
+    "test:auth": "node --test server/auth.integration.test.mjs",
     "test:unit": "node --test server/assessmentPolicy.test.mjs && node server/test-state-machine.mjs",
     "test": "npm run test:unit && npm run build",
     "test:browser": "node scripts/browser-test.mjs",
@@ -19,6 +26,8 @@
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource-variable/newsreader": "^5.3.0",
     "@google/genai": "^2.23.0",
     "@phosphor-icons/react": "^2.1.10",
@@ -27,10 +36,12 @@
     "framer-motion": "^11.11.17",
     "google-auth-library": "^10.9.1",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.15",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
@@ -40,6 +51,7 @@
     "autoprefixer": "^10.4.20",
     "playwright": "^1.63.0",
     "postcss": "^8.4.49",
+    "smtp-server": "^3.19.17",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
     "vite": "^6.0.3"

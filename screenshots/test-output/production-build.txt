@@ -14,6 +14,6 @@ dist/assets/bricolage-grotesque-latin-ext-wght-normal-CcLUaPy7.woff2    18.67 kB
 dist/assets/newsreader-latin-ext-wght-italic-DFS986qL.woff2             39.68 kB
 dist/assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2        41.34 kB
 dist/assets/newsreader-latin-wght-italic-Bxi8ein9.woff2                 64.52 kB
-dist/assets/index-r_KQHcm8.css                                          33.63 kB │ gzip:   7.69 kB
-dist/assets/index-DMnMoq4u.js                                          627.97 kB │ gzip: 160.34 kB
-✓ built in 5.22s
+dist/assets/index-i-eQnFYZ.css                                          34.61 kB │ gzip:   7.86 kB
+dist/assets/index-z5DZ_Zde.js                                          373.43 kB │ gzip: 102.75 kB
+✓ built in 3.68s

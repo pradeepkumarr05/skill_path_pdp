@@ -1,21 +1,22 @@
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
-import { query } from './db.mjs';
+import { query, withTransaction } from './db.mjs';
 import { signToken } from './auth.mjs';
+import { consumeAccountToken, sendAccountLink } from './authMail.mjs';
+import { skillEvidence } from './learningPolicy.mjs';
 
 const google = new OAuth2Client();
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
 
 export async function publicCandidate(c) {
-  const [latest, deterministicHistory, chatbotHistory] = await Promise.all([
-    query(`SELECT r.score, r.level, r.total, r.correct_count, r.timed_out, r.created_at FROM skill_assessment_results r
-      JOIN skill_assessments a ON a.id=r.assessment_id WHERE a.candidate_id=$1 ORDER BY r.created_at DESC LIMIT 1`, [c.id]),
-    query(`SELECT a.id, a.status, a.started_at, a.submitted_at, a.terminated_at, r.score, r.level, r.total, r.correct_count, r.timed_out
+  // This function also runs inside auth transactions, where queries share one client.
+  const latest = await query(`SELECT r.score, r.level, r.total, r.correct_count, r.timed_out, r.created_at, r.results FROM skill_assessment_results r
+      JOIN skill_assessments a ON a.id=r.assessment_id WHERE a.candidate_id=$1 ORDER BY r.created_at DESC LIMIT 1`, [c.id]);
+  const deterministicHistory = await query(`SELECT a.id, a.status, a.started_at, a.submitted_at, a.terminated_at, r.score, r.level, r.total, r.correct_count, r.timed_out
       FROM skill_assessments a LEFT JOIN skill_assessment_results r ON r.assessment_id=a.id
-      WHERE a.candidate_id=$1 ORDER BY a.created_at DESC LIMIT 25`, [c.id]),
-    query(`SELECT id, status, reason, aggregate, model, gemini_configured, created_at, completed_at, terminated_at, warning_count
-      FROM chat_sessions WHERE candidate_id=$1 ORDER BY created_at DESC LIMIT 25`, [c.id]),
-  ]);
+      WHERE a.candidate_id=$1 ORDER BY a.created_at DESC LIMIT 25`, [c.id]);
+  const chatbotHistory = await query(`SELECT id, status, reason, aggregate, model, gemini_configured, created_at, completed_at, terminated_at, warning_count
+      FROM chat_sessions WHERE candidate_id=$1 ORDER BY created_at DESC LIMIT 25`, [c.id]);
   const assessmentHistory = [
     ...chatbotHistory.rows.map(item => ({ type: 'chatbot', id: item.id, status: item.status, reason: item.reason,
       aggregate: item.aggregate, model: item.model, geminiConfigured: item.gemini_configured, warningCount: item.warning_count,
@@ -24,16 +25,28 @@ export async function publicCandidate(c) {
       level: item.level, total: item.total, correctCount: item.correct_count, timedOut: item.timed_out,
       createdAt: item.started_at, completedAt: item.submitted_at, terminatedAt: item.terminated_at })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const completedChat = chatbotHistory.rows.find(item => item.status === 'completed' && (!latest.rows[0] || new Date(item.completed_at) <= new Date(latest.rows[0].created_at)));
+  const chatStates = completedChat ? (await query('SELECT skill,final_score FROM chat_skill_states WHERE session_id=$1', [completedChat.id])).rows : [];
   return { id: c.id, name: c.name, email: c.email, qualification: c.qualification,
+    skillEvidence: skillEvidence(latest.rows[0]?.results || [], chatStates),
     selectedDomain: c.selected_domain, assessmentDomain: c.assessment_domain,
     interestedRoles: c.interested_roles, claimedSkills: c.claimed_skills,
-    profileComplete: c.profile_complete, setup: c.setup || {}, latestResult: latest.rows[0] ? {
+    emailVerified: Boolean(c.email_verified_at), profileComplete: c.profile_complete, setup: c.setup || {}, latestResult: latest.rows[0] ? {
       ...latest.rows[0], score: Number(latest.rows[0].score), total: Number(latest.rows[0].total), correct_count: Number(latest.rows[0].correct_count),
     } : null,
     assessmentHistory };
 }
 
 export async function authenticate(body, mode) {
+  const response = await withTransaction(() => authenticateLocked(body, mode));
+  if (mode === 'register') {
+    try { await sendAccountLink(response.candidate, 'verify'); response.verificationSent = true; }
+    catch { response.verificationSent = false; }
+  }
+  return response;
+}
+
+async function authenticateLocked(body, mode) {
   let candidate;
   if (mode === 'google') {
     if (!process.env.GOOGLE_CLIENT_ID) throw fail('Google sign-in is not configured.', 503);
@@ -44,14 +57,17 @@ export async function authenticate(body, mode) {
     } catch { throw fail('Google sign-in could not be verified. Please try again.', 401); }
     if (!identity?.sub || !identity.email_verified || !identity.email) throw fail('A verified Google email is required.', 401);
     // Bind to the immutable Google subject. Verified email may link an existing account.
-    const existing = await query('SELECT * FROM candidates WHERE google_sub=$1', [identity.sub]);
-    const result = existing.rows.length ? existing : await query(`INSERT INTO candidates (name, email, google_sub)
-      VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET google_sub = EXCLUDED.google_sub
-      WHERE candidates.google_sub IS NULL OR candidates.google_sub = EXCLUDED.google_sub RETURNING *`,
+    const existing = await query('UPDATE candidates SET email_verified_at=COALESCE(email_verified_at,NOW()) WHERE google_sub=$1 RETURNING *', [identity.sub]);
+    const result = existing.rows.length ? existing : await query(`INSERT INTO candidates (name, email, google_sub, email_verified_at)
+      VALUES ($1, $2, $3, NOW()) ON CONFLICT (email) DO UPDATE SET google_sub = EXCLUDED.google_sub, email_verified_at=COALESCE(candidates.email_verified_at,NOW())
+      WHERE (candidates.google_sub IS NULL OR candidates.google_sub = EXCLUDED.google_sub)
+        AND (candidates.email_verified_at IS NOT NULL OR candidates.password_hash IS NULL) RETURNING *`,
     [identity.name || identity.email.split('@')[0], identity.email.toLowerCase(), identity.sub]);
     candidate = result.rows[0];
-    if (!candidate) throw fail('This account is linked to another Google identity.', 409);
+    if (!candidate) throw fail('Sign in with your password and verify your email before linking Google.', 409);
   } else if (mode === 'register') {
+    if (typeof body.email !== 'string' || typeof body.username !== 'string' || typeof body.password !== 'string')
+      throw fail('Email, username, and password must be text.');
     const email = String(body.email || '').trim().toLowerCase();
     const username = String(body.username || '').trim();
     const password = String(body.password || '');
@@ -63,14 +79,28 @@ export async function authenticate(body, mode) {
       candidate = result.rows[0];
     } catch (error) { if (error.code === '23505') throw fail('An account with these details already exists. Please sign in.', 409); throw error; }
   } else {
+    if (typeof body.username !== 'string' || typeof body.password !== 'string') throw fail('Invalid username or password.', 401);
     const identifier = String(body.username || '').trim();
     const password = String(body.password || '');
     if (!identifier || !password || Buffer.byteLength(password) > 72) throw fail('Invalid username or password.', 401);
-    const { rows } = await query('SELECT * FROM candidates WHERE username = $1 OR email = lower($1)', [identifier]);
+    const { rows } = await query('SELECT * FROM candidates WHERE username = $1 OR email = lower($1) FOR UPDATE', [identifier]);
     candidate = rows[0];
     if (!candidate?.password_hash || !await bcrypt.compare(password, candidate.password_hash)) throw fail('Invalid username or password.', 401);
   }
-  return { token: signToken(candidate.id), candidate: await publicCandidate(candidate) };
+  return { token: await signToken(candidate.id), candidate: await publicCandidate(candidate) };
+}
+
+export function verifyEmail(token) {
+  return consumeAccountToken(token, 'verify', id => query('UPDATE candidates SET email_verified_at=NOW(),updated_at=NOW() WHERE id=$1', [id]));
+}
+
+export function resetPassword(token, password) {
+  if (typeof password !== 'string' || password.length < 10 || Buffer.byteLength(password) > 72) throw fail('Use at least 10 characters and no more than 72 bytes.');
+  return consumeAccountToken(token, 'reset', async id => {
+    await query('UPDATE candidates SET password_hash=$2,email_verified_at=COALESCE(email_verified_at,NOW()),updated_at=NOW() WHERE id=$1', [id, await bcrypt.hash(password, 12)]);
+    await query('DELETE FROM auth_sessions WHERE candidate_id=$1', [id]);
+    await query('DELETE FROM account_tokens WHERE candidate_id=$1', [id]);
+  });
 }
 
 export async function saveProfile(id, body) {

@@ -16,7 +16,7 @@
  *   getOrCreateCandidate(profileInput)
  */
 import { randomUUID } from 'node:crypto';
-import { selectedAnswer, validateProctorEvent } from './assessmentPolicy.mjs';
+import { selectedAnswer, validateProctorEvent, interviewDecision } from './assessmentPolicy.mjs';
 import { query, withTransaction } from './db.mjs';
 import { SUPPORTED_DOMAIN, normalizeClaimedSkills } from './domainConfig.mjs';
 import {
@@ -320,8 +320,6 @@ function buildQuestionPrompt(session, skillState, difficulty, recentTranscript) 
   return `
 Candidate profile:
 ${JSON.stringify({
-  name: session.candidate_name,
-  email: session.candidate_email,
   qualification: session.qualification,
   selectedDomain: session.selected_domain,
   assessmentDomain: SUPPORTED_DOMAIN,
@@ -356,7 +354,6 @@ function buildEvaluationPrompt(session, question, skillState, answer, timedOut) 
   return `
 Candidate profile:
 ${JSON.stringify({
-  name: session.candidate_name,
   selectedDomain: session.selected_domain,
 }, null, 2)}
 
@@ -554,7 +551,7 @@ async function generateQuestion(sessionData, skillState, difficulty, recentTrans
       prompt: buildQuestionPrompt(sessionData, skillState, difficulty, recentTranscript),
       schema: questionSchema,
       temperature: difficulty === 'hard' ? 0.45 : 0.35,
-      maxOutputTokens: 700,
+      maxOutputTokens: 2048,
     });
     text = String(response.question || '').trim();
     intent = String(response.intent || '').trim();
@@ -722,21 +719,20 @@ async function evaluateWithGemini(session, question, skillState, answer, timedOu
       prompt: buildEvaluationPrompt(session, question, skillState, answer, timedOut),
       schema: evaluationSchema,
       temperature: 0.2,
-      maxOutputTokens: 900,
+      maxOutputTokens: 3072,
     });
 
-    const score = clampScore(response.score);
     return {
-      score,
-      level: ['novice', 'developing', 'job_ready', 'strong'].includes(response.level) ? response.level : levelFromScore(score),
-      pass: Boolean(response.pass) || score >= (question.difficulty === 'hard' ? HARD_PASS_SCORE : MEDIUM_PASS_SCORE),
+      ...interviewDecision(response.score, question.difficulty, timedOut),
       feedback: String(response.feedback || '').trim(),
       strengths: Array.isArray(response.strengths) ? response.strengths.map(String).slice(0, 4) : [],
       gaps: Array.isArray(response.gaps) ? response.gaps.map(String).slice(0, 4) : [],
-      nextAction: ['ask_hard', 'complete_skill'].includes(response.nextAction) ? response.nextAction : 'complete_skill',
     };
   } catch (error) {
-    if (process.env.ALLOW_DETERMINISTIC_AI_FALLBACK !== 'true') throw Object.assign(new Error('Your answer could not be evaluated. Please retry.'), { statusCode: 503 });
+    if (process.env.ALLOW_DETERMINISTIC_AI_FALLBACK !== 'true') {
+      console.error('[agent] Evaluation unavailable:', { kind: error.name, status: error.status, reason: /^(Gemini|Invalid interview)/.test(error.message) ? error.message : 'Provider or response error' });
+      throw Object.assign(new Error('Your answer could not be evaluated. Please retry.'), { statusCode: 503 });
+    }
     console.error('[agent] evaluateWithGemini fell back to heuristic scoring:', error.message);
     return heuristicEvaluate({ questionText: question.text, answer, difficulty: question.difficulty, timedOut });
   }
@@ -754,7 +750,7 @@ async function advanceSessionStateMachine(session, question, skillState, evaluat
       [skillState.id],
     );
 
-    if (evaluation.pass || evaluation.nextAction === 'ask_hard') {
+    if (evaluation.score >= MEDIUM_PASS_SCORE) {
       // Upgrade to hard
       await query(`UPDATE chat_skill_states SET status = 'hard' WHERE id = $1`, [skillState.id]);
       await askNextQuestion(sessionId, session, skillState, 'hard');

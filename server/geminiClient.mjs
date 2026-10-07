@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 
 let envLoaded = false;
 
@@ -88,8 +88,12 @@ async function callGeminiOnce({ systemInstruction, prompt, schema, temperature, 
     const response = await ai.models.generateContent({
       model: geminiModel(), contents: prompt,
       config: { systemInstruction, temperature, maxOutputTokens, responseMimeType: 'application/json',
+        ...(geminiModel().startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } } : {}),
         responseSchema: schema, abortSignal: controller.signal, httpOptions: { timeout: timeoutMs } },
     });
+    if (response.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+      throw Object.assign(new Error('Gemini response reached its output limit before completing JSON.'), { retryable: true });
+    }
     const text = response.text;
     if (!text) {
       const error = new Error('Gemini returned an empty response.');
@@ -136,7 +140,7 @@ export async function generateGeminiJson({
   let lastError = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     try {
-      return await callGeminiOnce({ systemInstruction, prompt, schema, temperature, maxOutputTokens, apiKey, timeoutMs });
+      return await callGeminiOnce({ systemInstruction, prompt, schema, temperature, maxOutputTokens: maxOutputTokens * (attempt + 1), apiKey, timeoutMs });
     } catch (error) {
       lastError = error;
       if (attempt < MAX_RETRIES && error.retryable) {

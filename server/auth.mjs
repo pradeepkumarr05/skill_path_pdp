@@ -9,6 +9,8 @@
 import jwt from 'jsonwebtoken';
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID, createHash } from 'node:crypto';
+import { query } from './db.mjs';
 
 // ── Inline .env loader ──────────────────────────────────────────────────────
 let envLoaded = false;
@@ -46,11 +48,17 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('Set JWT_SECRET to a 
  * @param {string} candidateId - UUID of the candidate
  * @returns {string} Signed JWT
  */
-export function signToken(candidateId) {
-  return jwt.sign({ sub: candidateId, iat: Math.floor(Date.now() / 1000) }, JWT_SECRET, {
+export async function signToken(candidateId) {
+  const token = jwt.sign({ sub: candidateId, iat: Math.floor(Date.now() / 1000) }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
+    jwtid: randomUUID(),
   });
+  const decoded = verifyToken(token);
+  await query('INSERT INTO auth_sessions(candidate_id,token_hash,expires_at) VALUES ($1,$2,$3)', [candidateId, tokenHash(token), new Date(decoded.exp * 1000)]);
+  return token;
 }
+
+export const tokenHash = token => createHash('sha256').update(token).digest('hex');
 
 /**
  * Verify and decode a JWT token.
@@ -83,17 +91,23 @@ export function extractBearerToken(req) {
  * @param {(statusCode: number, body: unknown) => void} sendJson
  * @returns {{ sub: string } | null} decoded payload or null
  */
-export function requireAuth(req, res, sendJson) {
+export async function requireAuth(req, res, sendJson) {
   const token = extractBearerToken(req);
   if (!token) {
     sendJson(res, 401, { error: 'Authorization token is required.' });
     return null;
   }
+  let decoded;
   try {
-    const decoded = verifyToken(token);
-    return decoded;
+    decoded = verifyToken(token);
   } catch {
     sendJson(res, 401, { error: 'Authorization token is invalid or expired.' });
     return null;
   }
+  const session = await query('SELECT id FROM auth_sessions WHERE token_hash=$1 AND candidate_id=$2 AND expires_at>NOW()', [tokenHash(token), decoded.sub]);
+  if (!session.rows.length) {
+    sendJson(res, 401, { error: 'Your session has expired. Please sign in again.' });
+    return null;
+  }
+  return decoded;
 }

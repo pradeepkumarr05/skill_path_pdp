@@ -15,7 +15,6 @@ import {
   UserCircle,
   WarningCircle,
 } from '@phosphor-icons/react';
-import { SkillPathLogo } from '../components/SkillPathLogo';
 import type { LoginMethod } from './LoginPage';
 import { uploadDocument } from '../api/skillpathApi';
 
@@ -80,7 +79,7 @@ const branchOptions = [
 const boardOptions = ['CBSE', 'ICSE', 'State Board', 'NIOS', 'IB', 'Other'];
 const years = Array.from({ length: 18 }, (_, index) => String(2028 - index));
 
-const domainOptions: Domain[] = ['Full Stack Engineering', 'Data Science and AI', 'DevOps and Cloud', 'Cybersecurity', 'Mobile Engineering', 'Networks and IoT'];
+const domainOptions: Domain[] = ['Full Stack Engineering'];
 
 const rolesByDomain: Record<Domain, string[]> = {
   'Full Stack Engineering': ['Full Stack Developer Trainee', 'Associate Software Engineer', 'Junior MERN Developer', 'Product Engineering Intern'],
@@ -101,26 +100,13 @@ const skillsByDomain: Record<Domain, string[]> = {
 };
 
 const degreeDurationYears: Record<string, number> = {
-  Diploma: 3,
-  'B.Tech': 4,
-  'B.E.': 4,
-  'B.Sc': 3,
-  BCA: 3,
-  'M.Tech': 2,
-  'M.E.': 2,
-  'M.Sc': 2,
-  MCA: 2,
-  PhD: 5,
-  Other: 3,
+  Diploma: 3, 'B.Tech': 4, 'B.E.': 4, 'B.Sc': 3, BCA: 3,
+  'M.Tech': 2, 'M.E.': 2, 'M.Sc': 2, MCA: 2, PhD: 5, Other: 3,
 };
 
-const inputClass =
-  'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition placeholder:text-skillpath-cream/45 focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
-const selectClass =
-  'h-12 w-full rounded-md border border-white/12 bg-white/8 px-4 text-base font-bold text-skillpath-cream shadow-soft transition focus:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-70';
-const cardClass = 'rounded-lg border border-white/10 bg-skillpath-night text-skillpath-cream shadow-panel';
-
-export function ProfileSetupPage({ initialEmail, initialProfile, initialName, saving, lastLoginMethod, onBack, onComplete }: ProfileSetupPageProps) {
+export function ProfileSetupPage({
+  initialEmail, initialProfile, initialName, saving, lastLoginMethod, onBack, onComplete,
+}: ProfileSetupPageProps) {
   const saved = initialProfile?.setup || {};
   const [firstName, setFirstName] = useState(saved.firstName || initialName?.split(' ')[0] || '');
   const [lastName, setLastName] = useState(saved.lastName || initialName?.split(' ').slice(1).join(' ') || '');
@@ -149,7 +135,8 @@ export function ProfileSetupPage({ initialEmail, initialProfile, initialName, sa
   const [resumeFileName, setResumeFileName] = useState(saved.resumeFileName || '');
   const [transcriptFileName, setTranscriptFileName] = useState(saved.transcriptFileName || '');
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const [setupStep, setSetupStep] = useState(0);
+  const locked = Boolean(saving);
 
   const isHighSchool = qualification === 'High School';
   const needsUgDetails = degree.startsWith('M') || qualification === 'Master Degree';
@@ -163,41 +150,15 @@ export function ProfileSetupPage({ initialEmail, initialProfile, initialName, sa
   const claimedSkills = noExistingSkills ? [] : selectedSkills;
 
   const completion = useMemo(() => {
-    const commonFields = [firstName, lastName, age, gender, email, qualification, domain];
+    const commonFields = [firstName, lastName, age, email, qualification, domain];
     const educationFields = isHighSchool
       ? [tenthPercentage, twelfthPercentage, board]
       : [resolvedCollegeName, collegeCity, degree, branch, cgpa, startYear, endYear, validStudyDuration ? 'valid' : '', needsUgDetails ? ugDegree : 'ug-na', needsUgDetails ? ugBranch : 'ug-na'];
     const choiceFields = [interestedRoles.length ? 'roles' : '', noExistingSkills || selectedSkills.length ? 'skills' : ''];
     const allFields = [...commonFields, ...educationFields, ...choiceFields];
-    const completed = allFields.filter((value) => String(value).trim().length > 0).length;
+    const completed = allFields.filter(v => String(v).trim().length > 0).length;
     return Math.round((completed / allFields.length) * 100);
-  }, [
-    age,
-    board,
-    branch,
-    cgpa,
-    collegeCity,
-    degree,
-    domain,
-    email,
-    endYear,
-    firstName,
-    gender,
-    interestedRoles.length,
-    isHighSchool,
-    lastName,
-    needsUgDetails,
-    noExistingSkills,
-    qualification,
-    resolvedCollegeName,
-    selectedSkills.length,
-    startYear,
-    tenthPercentage,
-    twelfthPercentage,
-    ugBranch,
-    ugDegree,
-    validStudyDuration,
-  ]);
+  }, [age, board, branch, cgpa, collegeCity, degree, domain, email, endYear, firstName, gender, interestedRoles.length, isHighSchool, lastName, needsUgDetails, noExistingSkills, qualification, resolvedCollegeName, selectedSkills.length, startYear, tenthPercentage, twelfthPercentage, ugBranch, ugDegree, validStudyDuration]);
 
   const canSubmit =
     firstName.trim().length > 1 &&
@@ -208,482 +169,435 @@ export function ProfileSetupPage({ initialEmail, initialProfile, initialName, sa
     (noExistingSkills || selectedSkills.length > 0) &&
     (isHighSchool
       ? Number(tenthPercentage) > 0 && Number(tenthPercentage) <= 100 && Number(twelfthPercentage) > 0 && Number(twelfthPercentage) <= 100 && board.length > 0
-      : resolvedCollegeName.trim().length > 1 &&
-        collegeCity.length > 0 &&
-        degree.length > 0 &&
-        branch.length > 0 &&
-        Number(cgpa) > 0 && Number(cgpa) <= 10 &&
-        startYear.length > 0 &&
-        endYear.length > 0 &&
-        validStudyDuration &&
-        (!needsUgDetails || (ugDegree.length > 0 && ugBranch.length > 0)));
+      : resolvedCollegeName.trim().length > 1 && collegeCity.length > 0 && degree.length > 0 && branch.length > 0 && Number(cgpa) > 0 && Number(cgpa) <= 10 && startYear.length > 0 && endYear.length > 0 && validStudyDuration && (!needsUgDetails || (ugDegree.length > 0 && ugBranch.length > 0)));
 
-  const toggleRole = (role: string) => {
-    if (fieldsDisabled) return;
-    setInterestedRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]));
-  };
-
-  const toggleSkill = (skill: string) => {
-    if (fieldsDisabled || noExistingSkills) return;
-    setSelectedSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]));
-  };
-
-  const toggleNoExistingSkills = () => {
-    if (fieldsDisabled) return;
-    setNoExistingSkills((current) => {
-      const next = !current;
-      if (next) {
-        setSelectedSkills([]);
-        setCustomSkill('');
-      }
-      return next;
-    });
-  };
-
-  const addCustomSkill = () => {
-    const nextSkill = customSkill.trim();
-    if (!nextSkill || selectedSkills.includes(nextSkill) || fieldsDisabled || noExistingSkills) return;
-    setSelectedSkills((current) => [...current, nextSkill]);
-    setCustomSkill('');
-  };
-
-  const handleDomainChange = (nextDomain: Domain) => {
-    if (fieldsDisabled) return;
-    setDomain(nextDomain);
-    setInterestedRoles([]);
-    setSelectedSkills([]);
-    setNoExistingSkills(false);
-    setCustomSkill('');
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!canSubmit || locked) return;
-    setReviewOpen(true);
-  };
-
+  const toggleRole = (role: string) => { if (fieldsDisabled) return; setInterestedRoles(cur => cur.includes(role) ? cur.filter(r => r !== role) : [...cur, role]); };
+  const toggleSkill = (skill: string) => { if (fieldsDisabled || noExistingSkills) return; setSelectedSkills(cur => cur.includes(skill) ? cur.filter(s => s !== skill) : [...cur, skill]); };
+  const toggleNoExistingSkills = () => { if (fieldsDisabled) return; setNoExistingSkills(cur => { const next = !cur; if (next) { setSelectedSkills([]); setCustomSkill(''); } return next; }); };
+  const addCustomSkill = () => { const s = customSkill.trim(); if (!s || selectedSkills.includes(s) || fieldsDisabled || noExistingSkills) return; setSelectedSkills(cur => [...cur, s]); setCustomSkill(''); };
+  const handleDomainChange = (next: Domain) => { if (fieldsDisabled) return; setDomain(next); setInterestedRoles([]); setSelectedSkills([]); setNoExistingSkills(false); setCustomSkill(''); };
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); if (!canSubmit || locked) return; setReviewOpen(true); };
   const profileResult: ProfileSetupResult = {
     setup: { firstName, lastName, age, gender, collegeName, customCollegeName, collegeCity, degree, branch, ugDegree, ugBranch, cgpa, startYear, endYear, tenthPercentage, twelfthPercentage, board },
-    name: `${firstName} ${lastName}`.trim(),
-    email,
-    qualification,
-    domain,
-    interestedRoles,
-    claimedSkills,
-    resumeFileName: resumeFileName || undefined,
-    transcriptFileName: transcriptFileName || undefined,
+    name: `${firstName} ${lastName}`.trim(), email, qualification, domain, interestedRoles, claimedSkills,
+    resumeFileName: resumeFileName || undefined, transcriptFileName: transcriptFileName || undefined,
   };
-
-  const confirmSubmission = () => {
-    if (!canSubmit) return;
-    setLocked(true);
-    setReviewOpen(true);
-  };
-
-  const continueToGuidelines = () => {
-    if (!locked || saving) return;
-    onComplete(profileResult);
-  };
-
-  const editSubmission = () => {
-    if (locked) return;
-    setReviewOpen(false);
-  };
+  const confirmSubmission = () => { if (!canSubmit || saving) return; onComplete(profileResult); };
+  const editSubmission = () => { if (locked) return; setReviewOpen(false); };
 
   return (
-    <main className="min-h-screen bg-skillpath-night p-4 text-skillpath-ink sm:p-5 lg:p-6">
-      <div className="flex min-h-[calc(100vh-32px)] w-full flex-col rounded-lg border border-white/10 bg-skillpath-night shadow-panel sm:min-h-[calc(100vh-40px)] lg:min-h-[calc(100vh-48px)]">
-        <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <SkillPathLogo />
-            <span className="rounded-full bg-skillpath-teal px-3 py-1.5 text-sm font-black text-skillpath-night lg:hidden">2/4 complete</span>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="min-w-[240px]">
-              <div className="mb-2 flex items-center justify-between text-sm font-black text-skillpath-cream">
-                <span>Profile setup</span>
-                <span>{completion}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/14">
-                <div className="h-full rounded-full bg-skillpath-teal transition-all" style={{ width: `${completion}%` }} />
-              </div>
+    <div className="sp-page">
+      {/* HEADER */}
+      <header className="sp-header">
+        <span className="sp-logo-script">SkillPath</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: 'var(--sp-muted)', marginBottom: 6 }}>
+              <span>Profile setup</span>
+              <span>{completion}%</span>
+            </div>
+            <div className="sp-progress">
+              <div className="sp-progress-fill" style={{ width: `${completion}%` }} />
             </div>
           </div>
-        </header>
+          <span
+            style={{
+              display: 'inline-flex', alignItems: 'center', padding: '4px 12px',
+              borderRadius: 999, background: 'var(--sp-sage-dim)', color: 'var(--sp-sage)',
+              fontSize: 12, fontWeight: 700,
+            }}
+          >
+            Profile setup
+          </span>
+        </div>
+      </header>
 
-        <form className="grid flex-1 gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(330px,400px)] lg:p-8 xl:grid-cols-[minmax(0,1fr)_440px]" onSubmit={handleSubmit}>
-          <section className="min-w-0">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="sp-content">
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: 'grid',
+            gap: 24,
+            gridTemplateColumns: 'minmax(0,1fr) minmax(280px,360px)',
+          }}
+        >
+          {/* LEFT — MAIN FORM */}
+          <section style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
               <div>
-                <h1 className="text-3xl font-bold leading-tight text-skillpath-cream">Profile setup</h1>
-                <p className="mt-3 max-w-3xl text-base font-medium leading-7 text-skillpath-cream/70">
-                  Tell SkillPath who you are, what you studied, and where you want to grow.
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--sp-ink)', margin: 0 }}>Profile setup</h1>
+                <p style={{ marginTop: 6, fontSize: 14, color: 'var(--sp-muted)', maxWidth: 480 }}>
+                  Name, age, education, and a target role are required. Gender and PDF documents are optional. Select your existing skills or choose None yet.
                 </p>
               </div>
               <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/14 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 onClick={onBack}
                 disabled={locked}
+                className="sp-btn-secondary"
+                style={{ flexShrink: 0, gap: 8 }}
               >
-                <ArrowLeft className="h-4 w-4" weight="bold" aria-hidden="true" />
+                <ArrowLeft size={15} weight="bold" aria-hidden />
                 Back
               </button>
             </div>
 
-            {locked ? (
-              <div className="mb-5 flex items-start gap-3 rounded-lg border border-skillpath-teal bg-skillpath-teal p-4 text-skillpath-night">
-                <LockSimple className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
-                <p className="text-sm font-black">Profile submitted. Details are locked for this session.</p>
+            {locked && (
+              <div className="sp-notice sp-notice-success sp-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <LockSimple size={16} weight="bold" aria-hidden />
+                <span style={{ fontWeight: 600, fontSize: 13 }}>Saving your profile...</span>
               </div>
-            ) : null}
+            )}
 
-            <div className="grid gap-5 xl:grid-cols-2">
-              <section className={cardClass}>
-                <SectionHeader icon={<UserCircle className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Basic details" />
-                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+            <nav className="setup-tabs" aria-label="Profile sections">{['Personal details','Education','Career goals','Documents'].map((label,index)=><button type="button" key={label} aria-current={setupStep===index?'step':undefined} disabled={fieldsDisabled} onClick={()=>setSetupStep(index)}>{index+1}. {label}</button>)}</nav>
+            <div style={{ display: 'grid', gap: 16 }}>
+              {/* Basic details */}
+              <Card hidden={setupStep !== 0}>
+                <SectionHeader icon={<UserCircle size={17} weight="bold" />} title="Basic details" />
+                <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 14 }}>
                   <Field label="First name">
-                    <input className={inputClass} value={firstName} onChange={(event) => setFirstName(event.target.value)} disabled={fieldsDisabled} autoComplete="given-name" />
+                    <input style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} disabled={fieldsDisabled} autoComplete="given-name" />
                   </Field>
                   <Field label="Last name">
-                    <input className={inputClass} value={lastName} onChange={(event) => setLastName(event.target.value)} disabled={fieldsDisabled} autoComplete="family-name" />
+                    <input style={inputStyle} value={lastName} onChange={e => setLastName(e.target.value)} disabled={fieldsDisabled} autoComplete="family-name" />
                   </Field>
                   <Field label="Age">
-                    <input className={inputClass} type="number" min="13" max="80" value={age} onChange={(event) => setAge(event.target.value)} disabled={fieldsDisabled} />
+                    <input style={inputStyle} type="number" min="13" max="80" value={age} onChange={e => setAge(e.target.value)} disabled={fieldsDisabled} />
                   </Field>
-                  <Field label="Gender">
-                    <select className={selectClass} value={gender} onChange={(event) => setGender(event.target.value as Gender)} disabled={fieldsDisabled}>
-                      {genderOptions.map((option) => (
-                        <option key={option}>{option}</option>
-                      ))}
+                  <Field label="Gender (optional)">
+                    <select style={inputStyle} value={gender} onChange={e => setGender(e.target.value as Gender)} disabled={fieldsDisabled}>
+                      {genderOptions.map(o => <option key={o}>{o}</option>)}
                     </select>
                   </Field>
-                  <Field label="Email ID" className="sm:col-span-2">
-                    <input className={inputClass} type="email" value={email} readOnly disabled autoComplete="email" />
+                  <Field label="Email" style={{ gridColumn: '1 / -1' }}>
+                    <input style={inputStyle} type="email" value={email} readOnly disabled autoComplete="email" />
                   </Field>
                 </div>
-              </section>
+              </Card>
 
-              <section className={cardClass}>
-                <SectionHeader icon={<GraduationCap className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Education" />
-                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+              {/* Education */}
+              <Card hidden={setupStep !== 1}>
+                <SectionHeader icon={<GraduationCap size={17} weight="bold" />} title="Education" />
+                <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 14 }}>
                   <Field label="Qualification">
-                    <select className={selectClass} value={qualification} onChange={(event) => setQualification(event.target.value as Qualification)} disabled={fieldsDisabled}>
-                      {qualificationOptions.map((option) => (
-                        <option key={option}>{option}</option>
-                      ))}
+                    <select style={inputStyle} value={qualification} onChange={e => setQualification(e.target.value as Qualification)} disabled={fieldsDisabled}>
+                      {qualificationOptions.map(o => <option key={o}>{o}</option>)}
                     </select>
                   </Field>
 
                   {isHighSchool ? (
                     <>
                       <Field label="Board of study">
-                        <select className={selectClass} value={board} onChange={(event) => setBoard(event.target.value)} disabled={fieldsDisabled}>
-                          {boardOptions.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
+                        <select style={inputStyle} value={board} onChange={e => setBoard(e.target.value)} disabled={fieldsDisabled}>
+                          {boardOptions.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </Field>
                       <Field label="10th percentage">
-                        <input className={inputClass} type="number" min="0" max="100" value={tenthPercentage} onChange={(event) => setTenthPercentage(event.target.value)} disabled={fieldsDisabled} />
+                        <input style={inputStyle} type="number" min="0" max="100" value={tenthPercentage} onChange={e => setTenthPercentage(e.target.value)} disabled={fieldsDisabled} />
                       </Field>
                       <Field label="12th percentage">
-                        <input className={inputClass} type="number" min="0" max="100" value={twelfthPercentage} onChange={(event) => setTwelfthPercentage(event.target.value)} disabled={fieldsDisabled} />
+                        <input style={inputStyle} type="number" min="0" max="100" value={twelfthPercentage} onChange={e => setTwelfthPercentage(e.target.value)} disabled={fieldsDisabled} />
                       </Field>
                     </>
                   ) : (
                     <>
-                      <Field label="College name">
-                    <select className={selectClass} value={collegeName} onChange={(event) => setCollegeName(event.target.value)} disabled={fieldsDisabled}>
-                          <option value="" disabled>Select a college</option>
-                          {collegeOptions.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
+                      <Field label="College">
+                        <select style={inputStyle} value={collegeName} onChange={e => setCollegeName(e.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select college</option>
+                          {collegeOptions.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </Field>
-                      {collegeName === 'Other' ? (
-                        <Field label="Enter college name" className="sm:col-span-2">
-                          <input className={inputClass} value={customCollegeName} onChange={(event) => setCustomCollegeName(event.target.value)} disabled={fieldsDisabled} />
+                      {collegeName === 'Other' && (
+                        <Field label="College name" style={{ gridColumn: '1 / -1' }}>
+                          <input style={inputStyle} value={customCollegeName} onChange={e => setCustomCollegeName(e.target.value)} disabled={fieldsDisabled} />
                         </Field>
-                      ) : null}
-                      <Field label="College city">
-                        <select className={selectClass} value={collegeCity} onChange={(event) => setCollegeCity(event.target.value)} disabled={fieldsDisabled}>
-                          <option value="" disabled>Select a city</option>
-                          {cityOptions.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
+                      )}
+                      <Field label="City">
+                        <select style={inputStyle} value={collegeCity} onChange={e => setCollegeCity(e.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Select city</option>
+                          {cityOptions.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </Field>
                       <Field label="Degree">
-                        <select className={selectClass} value={degree} onChange={(event) => setDegree(event.target.value)} disabled={fieldsDisabled}>
-                          {degreeOptions.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
+                        <select style={inputStyle} value={degree} onChange={e => setDegree(e.target.value)} disabled={fieldsDisabled}>
+                          {degreeOptions.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </Field>
                       <Field label="Branch">
-                        <select className={selectClass} value={branch} onChange={(event) => setBranch(event.target.value)} disabled={fieldsDisabled}>
-                          {branchOptions.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
+                        <select style={inputStyle} value={branch} onChange={e => setBranch(e.target.value)} disabled={fieldsDisabled}>
+                          {branchOptions.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </Field>
-                      {needsUgDetails ? (
+                      {needsUgDetails && (
                         <>
                           <Field label="UG degree">
-                            <select className={selectClass} value={ugDegree} onChange={(event) => setUgDegree(event.target.value)} disabled={fieldsDisabled}>
-                              {ugDegreeOptions.map((option) => (
-                                <option key={option}>{option}</option>
-                              ))}
+                            <select style={inputStyle} value={ugDegree} onChange={e => setUgDegree(e.target.value)} disabled={fieldsDisabled}>
+                              {ugDegreeOptions.map(o => <option key={o}>{o}</option>)}
                             </select>
                           </Field>
                           <Field label="UG branch">
-                            <select className={selectClass} value={ugBranch} onChange={(event) => setUgBranch(event.target.value)} disabled={fieldsDisabled}>
-                              {branchOptions.map((option) => (
-                                <option key={option}>{option}</option>
-                              ))}
+                            <select style={inputStyle} value={ugBranch} onChange={e => setUgBranch(e.target.value)} disabled={fieldsDisabled}>
+                              {branchOptions.map(o => <option key={o}>{o}</option>)}
                             </select>
                           </Field>
                         </>
-                      ) : null}
+                      )}
                       <Field label="CGPA">
-                        <input className={inputClass} type="number" min="0" max="10" step="0.1" value={cgpa} onChange={(event) => setCgpa(event.target.value)} disabled={fieldsDisabled} />
+                        <input style={inputStyle} type="number" min="0" max="10" step="0.1" value={cgpa} onChange={e => setCgpa(e.target.value)} disabled={fieldsDisabled} />
                       </Field>
                       <Field label="Start year">
-                        <select className={selectClass} value={startYear} onChange={(event) => setStartYear(event.target.value)} disabled={fieldsDisabled}>
-                          <option value="" disabled>Select year</option>
-                          {years.map((year) => (
-                            <option key={year}>{year}</option>
-                          ))}
+                        <select style={inputStyle} value={startYear} onChange={e => setStartYear(e.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Year</option>
+                          {years.map(y => <option key={y}>{y}</option>)}
                         </select>
                       </Field>
                       <Field label="End year">
-                        <select className={selectClass} value={endYear} onChange={(event) => setEndYear(event.target.value)} disabled={fieldsDisabled}>
-                          <option value="" disabled>Select year</option>
-                          {years.map((year) => (
-                            <option key={year}>{year}</option>
-                          ))}
+                        <select style={inputStyle} value={endYear} onChange={e => setEndYear(e.target.value)} disabled={fieldsDisabled}>
+                          <option value="" disabled>Year</option>
+                          {years.map(y => <option key={y}>{y}</option>)}
                         </select>
                       </Field>
-                      {!validStudyDuration ? (
-                        <div className="sm:col-span-2 rounded-md border border-skillpath-danger bg-white/8 p-3 text-sm font-bold text-skillpath-cream">
+                      {!validStudyDuration && (
+                        <div className="sp-notice sp-notice-warn" style={{ gridColumn: '1 / -1' }}>
                           Selected degree expects a {expectedDuration}-year study period.
                         </div>
-                      ) : null}
+                      )}
                     </>
                   )}
                 </div>
-              </section>
+              </Card>
 
-              <section className={`${cardClass} xl:col-span-2`}>
-                <SectionHeader icon={<FileArrowUp className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Documents" />
-                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+              {/* Documents */}
+              <Card hidden={setupStep !== 3}>
+                <SectionHeader icon={<FileArrowUp size={17} weight="bold" />} title="Documents" />
+                <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
                   <FileField label="Resume" fileName={resumeFileName} disabled={fieldsDisabled} onChange={setResumeFileName} />
                   <FileField label="Academic transcript" fileName={transcriptFileName} disabled={fieldsDisabled} onChange={setTranscriptFileName} />
                 </div>
-              </section>
+              </Card>
 
-              <section className={`${cardClass} xl:col-span-2`}>
-                <SectionHeader icon={<Briefcase className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Domain and roles" />
-                <div className="grid gap-5 p-4 sm:p-5 xl:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
+              {/* Domain & roles */}
+              <Card hidden={setupStep !== 2}>
+                <SectionHeader icon={<Briefcase size={17} weight="bold" />} title="Domain and roles" />
+                <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'minmax(200px,280px) minmax(0,1fr)', gap: 20 }}>
                   <div>
-                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-teal">Interested domain</h3>
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                      {domainOptions.map((option) => (
+                    <p className="sp-label" style={{ marginBottom: 10 }}>Domain</p>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {(initialProfile?.domain && initialProfile.domain !== 'Full Stack Engineering' ? [initialProfile.domain, ...domainOptions] : domainOptions).map(option => (
                         <ChoiceButton key={option} label={option} selected={domain === option} disabled={fieldsDisabled} onClick={() => handleDomainChange(option)} />
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h3 className="mb-3 text-sm font-black uppercase text-skillpath-teal">Interested roles</h3>
-                    <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
-                      {currentRoles.map((role) => (
+                    <p className="sp-label" style={{ marginBottom: 10 }}>Interested roles</p>
+                    <div style={{ display: 'grid', gap: 6, gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
+                      {currentRoles.map(role => (
                         <ChoiceButton key={role} label={role} selected={interestedRoles.includes(role)} disabled={fieldsDisabled} onClick={() => toggleRole(role)} />
                       ))}
                     </div>
                   </div>
                 </div>
-              </section>
+              </Card>
 
-              <section className={`${cardClass} xl:col-span-2`}>
-                <SectionHeader icon={<Stack className="h-6 w-6" weight="bold" aria-hidden="true" />} title="Existing skills" />
-                <div className="p-4 sm:p-5">
-                  <div className="mb-3">
+              {/* Skills */}
+              <Card hidden={setupStep !== 2}>
+                <SectionHeader icon={<Stack size={17} weight="bold" />} title="Existing skills" />
+                <div style={{ padding: '16px 20px' }}>
+                  <div style={{ marginBottom: 12 }}>
                     <ChoiceButton label="None yet" selected={noExistingSkills} disabled={fieldsDisabled} onClick={toggleNoExistingSkills} />
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-                    {currentSkills.map((skill) => (
+                  <div style={{ display: 'grid', gap: 6, gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))' }}>
+                    {currentSkills.map(skill => (
                       <ChoiceButton key={skill} label={skill} selected={selectedSkills.includes(skill)} disabled={fieldsDisabled || noExistingSkills} onClick={() => toggleSkill(skill)} />
                     ))}
                   </div>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
                     <input
-                      className={inputClass}
+                      style={{ ...inputStyle, height: 40 }}
                       value={customSkill}
-                      onChange={(event) => setCustomSkill(event.target.value)}
-                      placeholder="Add another skill"
+                      onChange={e => setCustomSkill(e.target.value)}
+                      placeholder="Add a custom skill"
                       disabled={fieldsDisabled || noExistingSkills}
                     />
                     <button
-                      className="inline-flex h-12 items-center justify-center rounded-md bg-skillpath-teal px-5 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream disabled:cursor-not-allowed disabled:opacity-50"
                       type="button"
+                      className="sp-btn-accent"
+                      style={{ flexShrink: 0, height: 40, padding: '0 18px', fontSize: 13 }}
                       onClick={addCustomSkill}
                       disabled={fieldsDisabled || noExistingSkills || customSkill.trim().length === 0}
                     >
-                      Add skill
+                      Add
                     </button>
                   </div>
                 </div>
-              </section>
+              </Card>
             </div>
+            <div className="action-row" style={{justifyContent:'space-between',marginTop:24}}><button type="button" className="sp-btn-secondary" disabled={setupStep===0||fieldsDisabled} onClick={()=>setSetupStep(s=>s-1)}><ArrowLeft size={18} />Previous</button><button type="button" className="sp-btn-primary" disabled={setupStep===3||fieldsDisabled} onClick={()=>setSetupStep(s=>s+1)}>Next section<ArrowRight size={18} /></button></div>
           </section>
 
-          <aside className="min-w-0 lg:sticky lg:top-8 lg:self-start">
-            <section className="rounded-lg border border-skillpath-teal/40 bg-skillpath-cream p-5 text-skillpath-night shadow-panel">
-              <div className="mb-5 flex items-center justify-between gap-4">
-                <h2 className="text-2xl font-black">{reviewOpen ? 'Final review' : 'Setup status'}</h2>
-                <CheckCircle className="h-7 w-7 text-skillpath-teal" weight={locked ? 'fill' : 'bold'} aria-hidden="true" />
+          {/* RIGHT — SIDEBAR */}
+          <aside style={{ position: 'sticky', top: 76, alignSelf: 'start', minWidth: 0 }}>
+            <div className="sp-card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--sp-ink)', margin: 0 }}>
+                  {reviewOpen ? 'Final review' : 'Setup status'}
+                </h2>
+                <CheckCircle size={22} weight={locked ? 'fill' : 'bold'} color={locked ? 'var(--sp-sage)' : 'var(--sp-muted)'} aria-hidden />
               </div>
 
               {reviewOpen ? (
                 <>
-                  <SummaryRows
-                    rows={[
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {([
                       ['Name', `${firstName} ${lastName}`.trim() || 'Required'],
-                      ['Age and gender', `${age}, ${gender}`],
+                      ['Age / Gender', `${age}, ${gender}`],
                       ['Email', email || 'Required'],
                       ['Education', isHighSchool ? `${board}, 10th ${tenthPercentage}%, 12th ${twelfthPercentage}%` : `${degree}, ${branch}`],
-                      ['College', isHighSchool ? 'High school route' : resolvedCollegeName || 'Required'],
-                      ['Study period', isHighSchool ? 'School education' : `${startYear} to ${endYear}`],
+                      ['College', isHighSchool ? 'High school' : resolvedCollegeName || 'Required'],
+                      ['Study period', isHighSchool ? 'School' : `${startYear} to ${endYear}`],
                       ['Domain', domain],
                       ['Roles', interestedRoles.length ? interestedRoles.join(', ') : 'Select at least one'],
                       ['Skills', noExistingSkills ? 'None yet' : selectedSkills.length ? selectedSkills.join(', ') : 'Select at least one'],
                       ['Resume', resumeFileName || 'Not uploaded'],
                       ['Transcript', transcriptFileName || 'Not uploaded'],
-                      ['Signed in with', lastLoginMethod ?? 'google'],
-                    ]}
-                  />
+                    ] as [string, string][]).map(([label, value]) => (
+                      <SummaryRow key={label} label={label} value={value} />
+                    ))}
+                  </div>
 
-                  <div className="mt-5 rounded-lg bg-skillpath-night p-4 text-skillpath-cream">
-                    <div className="mb-3 flex items-start gap-2">
-                      {locked ? (
-                        <SealCheck className="mt-0.5 h-5 w-5 flex-none text-skillpath-teal" weight="fill" aria-hidden="true" />
-                      ) : (
-                        <PencilSimple className="mt-0.5 h-5 w-5 flex-none text-skillpath-teal" weight="bold" aria-hidden="true" />
-                      )}
-                      <p className="text-sm font-bold leading-5">
-                        {locked ? 'Submitted. Changes are disabled.' : 'Review carefully. Once submitted, these details cannot be changed in this session.'}
+                  <div style={{
+                    marginTop: 16, padding: 14, borderRadius: 8,
+                    background: 'var(--sp-panel)', border: '1px solid var(--sp-border)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                      {locked
+                        ? <SealCheck size={17} weight="fill" color="var(--sp-sage)" aria-hidden />
+                        : <PencilSimple size={17} weight="bold" color="var(--sp-muted)" aria-hidden />}
+                      <p style={{ fontSize: 13, color: 'var(--sp-body)', fontWeight: 600, lineHeight: 1.5 }}>
+                        {locked
+                          ? 'Saving your changes.'
+                          : 'Review your details before saving. You can update your profile later.'}
                       </p>
                     </div>
                     {!locked ? (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                        <button
-                          className="inline-flex h-11 items-center justify-center rounded-md border border-white/18 bg-white/8 px-4 text-sm font-black text-skillpath-cream transition hover:border-skillpath-teal"
-                          type="button"
-                          onClick={editSubmission}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="inline-flex h-11 items-center justify-center rounded-md bg-skillpath-teal px-4 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream"
-                          type="button"
-                          onClick={confirmSubmission}
-                        >
-                          Submit
-                        </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <button type="button" className="sp-btn-secondary" style={{ height: 40, fontSize: 13 }} onClick={editSubmission}>Edit</button>
+                        <button type="button" className="sp-btn-accent" style={{ height: 40, fontSize: 13 }} onClick={confirmSubmission}>Save profile</button>
                       </div>
                     ) : (
-                      <button
-                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-skillpath-teal px-4 text-sm font-black text-skillpath-night transition hover:bg-skillpath-cream"
-                        type="button"
-                        onClick={continueToGuidelines}
-                      >
-                        {saving ? 'Saving profile...' : 'Continue to dashboard'}
-                        <ArrowRight className="h-4 w-4" weight="bold" aria-hidden="true" />
+                      <button type="button" disabled className="sp-btn-accent" style={{ width: '100%', height: 40, fontSize: 13 }}>
+                        Saving...
+                        <ArrowRight size={15} weight="bold" aria-hidden />
                       </button>
                     )}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="space-y-3">
+                  <div style={{ display: 'grid', gap: 6, marginBottom: 16 }}>
                     <StatusRow label="Basic details" done={firstName.trim().length > 1 && lastName.trim().length > 1 && email.includes('@')} />
                     <StatusRow label="Education" done={isHighSchool ? Number(tenthPercentage) > 0 && Number(twelfthPercentage) > 0 : resolvedCollegeName.trim().length > 1 && Number(cgpa) > 0 && validStudyDuration} />
                     <StatusRow label="Domain and roles" done={interestedRoles.length > 0} />
                     <StatusRow label="Existing skills" done={noExistingSkills || selectedSkills.length > 0} />
                   </div>
-                  {!canSubmit ? (
-                    <div className="mt-5 flex gap-2 rounded-md border border-skillpath-danger bg-white p-3 text-sm font-bold text-skillpath-danger">
-                      <WarningCircle className="mt-0.5 h-5 w-5 flex-none" weight="bold" aria-hidden="true" />
-                      Complete all required fields before review.
+                  {!canSubmit && (
+                    <div className="sp-notice sp-notice-danger" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+                      <WarningCircle size={16} weight="bold" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden />
+                      <span>Complete all required fields before review.</span>
                     </div>
-                  ) : null}
+                  )}
                   <button
-                    className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-skillpath-night px-4 text-base font-black text-skillpath-cream transition hover:bg-skillpath-forest disabled:cursor-not-allowed disabled:bg-skillpath-muted"
                     type="submit"
+                    className="sp-btn-primary"
+                    style={{ width: '100%', height: 44, fontSize: 14 }}
                     disabled={!canSubmit}
                   >
                     Review profile
-                    <ArrowRight className="h-5 w-5" weight="bold" aria-hidden="true" />
+                    <ArrowRight size={15} weight="bold" aria-hidden />
                   </button>
                 </>
               )}
-            </section>
+            </div>
           </aside>
         </form>
       </div>
-    </main>
+    </div>
+  );
+}
+
+/* ── Shared sub-components ── */
+
+const inputStyle: React.CSSProperties = {
+  height: 42,
+  padding: '0 13px',
+  borderRadius: 8,
+  fontSize: 14,
+};
+
+function Card({ children, hidden = false }: { children: ReactNode; hidden?: boolean }) {
+  return (
+    <div hidden={hidden} className="setup-section" style={{ overflow: 'hidden' }}>
+      {children}
+    </div>
   );
 }
 
 function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4 sm:px-5">
-      <div className="grid h-10 w-10 place-items-center rounded-md bg-skillpath-teal text-skillpath-night">{icon}</div>
-      <h2 className="text-xl font-black text-skillpath-cream">{title}</h2>
+    <div className="sp-section-header">
+      <div className="sp-section-icon">{icon}</div>
+      <span className="sp-section-title">{title}</span>
     </div>
   );
 }
 
-function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
+function Field({ label, children, style }: { label: string; children: ReactNode; style?: React.CSSProperties }) {
   const id = useId();
   return (
-    <div className={`block ${className}`}>
-      <label htmlFor={id} className="mb-2 block text-sm font-black text-skillpath-cream">{label}</label>
+    <div style={style}>
+      <label htmlFor={id} style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--sp-body)', marginBottom: 6 }}>{label}</label>
       {isValidElement(children) ? cloneElement(children as ReactElement<{ id: string }>, { id }) : children}
     </div>
   );
 }
 
-function FileField({ label, fileName, disabled, onChange }: { label: string; fileName: string; disabled: boolean; onChange: (fileName: string) => void }) {
+function FileField({ label, fileName, disabled, onChange }: { label: string; fileName: string; disabled: boolean; onChange: (f: string) => void }) {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   return (
-    <label className="block rounded-md border border-white/12 bg-white/8 p-4">
-      <span className="mb-3 block text-sm font-black text-skillpath-cream">{label}</span>
+    <label style={{
+      display: 'block', padding: '14px 14px', borderRadius: 8,
+      background: 'var(--sp-panel)', border: '1px solid var(--sp-border)', cursor: 'pointer',
+    }}>
+      <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--sp-body)', marginBottom: 10 }}>{label}</span>
       <input
-        className="block w-full text-sm font-bold text-skillpath-cream file:mr-3 file:rounded-md file:border-0 file:bg-skillpath-teal file:px-4 file:py-2 file:text-sm file:font-black file:text-skillpath-night"
+        style={{
+          display: 'block', width: '100%', fontSize: 13, fontWeight: 500,
+          color: 'var(--sp-body)', border: 'none', background: 'transparent',
+          padding: 0, height: 'auto', borderRadius: 0,
+        }}
         type="file"
         accept=".pdf,application/pdf"
         disabled={disabled || uploading}
-        onChange={async (event) => {
-          const input = event.currentTarget;
+        onChange={async e => {
+          const input = e.currentTarget;
           const file = input.files?.[0];
           setError(''); onChange('');
           if (!file) return;
           const signature = await file.slice(0, 5).text();
           if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || signature !== '%PDF-' || file.size > 5 * 1024 * 1024) {
-            setError('Choose a valid PDF file up to 5 MB.'); input.value = ''; return;
+            setError('Valid PDF required, max 5 MB.'); input.value = ''; return;
           }
           setUploading(true);
-          try { const response = await uploadDocument(file, label === 'Resume' ? 'resume' : 'transcript'); onChange(response.filename); }
-          catch (err) { setError(err instanceof Error ? err.message : 'Upload failed. Please try again.'); input.value = ''; }
+          try { const res = await uploadDocument(file, label === 'Resume' ? 'resume' : 'transcript'); onChange(res.filename); }
+          catch (err) { setError(err instanceof Error ? err.message : 'Upload failed.'); input.value = ''; }
           finally { setUploading(false); }
         }}
       />
-      <span className="mt-3 block text-sm font-bold text-skillpath-cream/64">{fileName || 'Optional. PDF only, up to 5 MB.'}</span>
-      {error && <span role="alert" className="mt-2 block text-sm text-red-300">{error}</span>}
-      {uploading && <span role="status" className="mt-2 block text-sm text-skillpath-cream">Verifying and uploading PDF...</span>}
+      <span style={{ display: 'block', marginTop: 8, fontSize: 12, color: 'var(--sp-muted)' }}>
+        {uploading ? 'Uploading...' : fileName || 'Optional. PDF only, max 5 MB.'}
+      </span>
+      {error && <span role="alert" style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--sp-danger)' }}>{error}</span>}
     </label>
   );
 }
@@ -691,37 +605,41 @@ function FileField({ label, fileName, disabled, onChange }: { label: string; fil
 function ChoiceButton({ label, selected, disabled, onClick }: { label: string; selected: boolean; disabled: boolean; onClick: () => void }) {
   return (
     <button
-      className={`flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        selected ? 'border-skillpath-teal bg-skillpath-teal text-skillpath-night' : 'border-white/12 bg-white/8 text-skillpath-cream hover:border-skillpath-teal'
-      }`}
       type="button"
+      className={`sp-choice${selected ? ' selected' : ''}`}
       onClick={onClick}
       disabled={disabled}
     >
-      <span>{label}</span>
-      {selected ? <Check className="h-4 w-4 flex-none" weight="bold" aria-hidden="true" /> : null}
+      <span style={{ fontSize: 13 }}>{label}</span>
+      {selected && <Check size={14} weight="bold" aria-hidden />}
     </button>
   );
 }
 
-function SummaryRows({ rows }: { rows: Array<[string, string]> }) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-3 text-sm">
-      {rows.map(([label, value]) => (
-        <div key={label} className="rounded-md border border-skillpath-line bg-white p-3">
-          <p className="font-black text-skillpath-muted">{label}</p>
-          <p className="mt-1 font-black text-skillpath-night">{value}</p>
-        </div>
-      ))}
+    <div style={{
+      padding: '10px 12px', borderRadius: 8,
+      background: 'var(--sp-surface)', border: '1px solid var(--sp-border)',
+    }}>
+      <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--sp-muted)' }}>{label}</p>
+      <p style={{ marginTop: 3, fontSize: 13, fontWeight: 600, color: 'var(--sp-ink)', overflowWrap: 'anywhere' }}>{value}</p>
     </div>
   );
 }
 
 function StatusRow({ label, done }: { label: string; done: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-skillpath-line bg-white p-3 text-sm">
-      <span className="font-black text-skillpath-night">{label}</span>
-      <span className={done ? 'font-black text-skillpath-focus' : 'font-black text-skillpath-muted'}>{done ? 'Done' : 'Open'}</span>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      padding: '10px 12px', borderRadius: 8,
+      background: done ? 'var(--sp-sage-dim)' : 'var(--sp-panel)',
+      border: `1px solid ${done ? 'rgba(74,124,89,0.25)' : 'var(--sp-border)'}`,
+    }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: done ? 'var(--sp-sage)' : 'var(--sp-body)' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: done ? 'var(--sp-sage)' : 'var(--sp-ghost)' }}>
+        {done ? 'Done' : 'Open'}
+      </span>
     </div>
   );
 }

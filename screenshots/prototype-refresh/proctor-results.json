@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "checks": [
+    "One MCQ rendered at a time",
+    "Next and previous question navigation",
+    "Learning starts with simulated camera/screen/fullscreen",
+    "Completion disabled before ten minutes",
+    "Window blur discards attempt on server",
+    "No completion credit after abandonment"
+  ],
+  "limitations": "Chromium simulated media; synthetic blur event. Not a real-camera quality or anti-cheating certification."
+}

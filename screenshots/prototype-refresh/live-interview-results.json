@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "provider": "Gemini",
+  "deterministicFallback": false,
+  "question": "How do the `srcset` and `sizes` attributes in an `<img>` tag work together to allow the browser to select the optimal image resource?",
+  "syntheticAnswer": "I do not know the answer to this question.",
+  "evaluation": {
+    "score": 0,
+    "feedback": "You stated that you do not know the answer. Understanding `srcset` and `sizes` is crucial for responsive web development and optimizing media delivery."
+  },
+  "status": "completed"
+}

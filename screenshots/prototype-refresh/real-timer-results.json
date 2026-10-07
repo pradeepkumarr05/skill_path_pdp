@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "wallClockSeconds": 600,
+  "clockManipulation": false,
+  "checks": [
+    "Canceled exit keeps attempt active",
+    "Ten minutes of real heartbeats",
+    "Correct checkpoint saved completion",
+    "Reload retains completion"
+  ],
+  "limitations": "Real application and database with fixture lesson and Chromium simulated camera/screen."
+}

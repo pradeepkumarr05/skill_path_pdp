@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { selectedAnswer, validateProctorEvent, reviewEvents, criticalEvents } from './assessmentPolicy.mjs';
+import { selectedAnswer, validateProctorEvent, reviewEvents, criticalEvents, interviewDecision } from './assessmentPolicy.mjs';
 import { buildDeterministicSkillAssessment, publicSkillAssessmentItems } from './deterministicSkillAssessment.mjs';
+
+test('interview progression follows server thresholds, not model-supplied labels', () => {
+  assert.equal(interviewDecision(64, 'medium').nextAction, 'complete_skill');
+  assert.equal(interviewDecision(65, 'medium').nextAction, 'ask_hard');
+  assert.equal(interviewDecision(69, 'hard').pass, false);
+  assert.equal(interviewDecision(70, 'hard').pass, true);
+  assert.equal(interviewDecision(100, 'hard', true).score, 0);
+  assert.equal(interviewDecision(100, 'hard').nextAction, 'complete_skill');
+  for (const invalid of [null, undefined, '90', NaN, Infinity]) assert.throws(() => interviewDecision(invalid, 'medium'));
+});
 
 test('grading rejects missing, coerced, fractional and out-of-range choices', () => {
   for (const value of [null, undefined, '', '0', false, NaN, Infinity, -1, 4, 0.5, {}]) assert.equal(selectedAnswer(value, 4), null);

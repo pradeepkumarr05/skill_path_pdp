@@ -1,0 +1,1094 @@
+# Existing Theme: Baseline Only
+
+## Compact Tokens
+
+Tailwind: ink #151515, night #101314, forest #123D35, teal #00A884, citron #D7FF4F, cream #F7F0E6, paper #FFFCF6, line #D9CDBE, muted #6E665D, danger #BC3930, focus #007A63.
+
+CSS additionally overrides global inputs, labels, links and backgrounds with ocean/teal colors and !important declarations. These are existing implementation details, not the requested new subtle palette.
+
+Fonts: Bricolage Grotesque Variable for UI; Newsreader Variable italic for logo. Tailwind default spacing/breakpoints; page classes provide type scale. CSS radius tokens 8/12/18/24px; Tailwind rounded-md/lg also used. Shadows are defined in raw sources below. No theme provider or alternate light theme.
+
+## Raw Source
+
+### tailwind.config.js
+
+```js
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        skillpath: {
+          ink: '#151515',
+          night: '#101314',
+          forest: '#123D35',
+          teal: '#00A884',
+          citron: '#D7FF4F',
+          cream: '#F7F0E6',
+          paper: '#FFFCF6',
+          line: '#D9CDBE',
+          muted: '#6E665D',
+          danger: '#BC3930',
+          focus: '#007A63'
+        }
+      },
+      boxShadow: {
+        panel: '0 24px 60px rgba(16, 19, 20, 0.18)',
+        soft: '0 10px 24px rgba(21, 21, 21, 0.10)'
+      },
+      fontFamily: {
+        sans: ['Bricolage Grotesque Variable', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        logo: ['Newsreader Variable', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace']
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        }
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.25s ease-out'
+      }
+    }
+  },
+  plugins: []
+};
+
+```
+### src/styles.css
+
+```css
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/newsreader/wght-italic.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* =========================================================
+   SKILLPATH
+   PREMIUM DARK OCEAN / TEAL / INDIGO UI
+   ========================================================= */
+
+:root {
+  /* -------------------------------------------------------
+     TYPOGRAPHY
+     ------------------------------------------------------- */
+
+  font-family:
+    'Bricolage Grotesque Variable',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+
+  /* -------------------------------------------------------
+     MAIN BACKGROUND
+     ------------------------------------------------------- */
+
+  --sp-bg: #071a22;
+  --sp-bg-deep: #06151c;
+  --sp-bg-soft: #0a222c;
+
+
+  /* -------------------------------------------------------
+     SURFACES
+     ------------------------------------------------------- */
+
+  --sp-surface: #0d2731;
+  --sp-surface-2: #10313c;
+  --sp-surface-3: #143b47;
+  --sp-surface-hover: #17434f;
+
+
+  /* -------------------------------------------------------
+     BRAND COLORS
+     ------------------------------------------------------- */
+
+  --sp-teal: #19d3ae;
+  --sp-teal-light: #42e5c3;
+  --sp-teal-dark: #0da889;
+
+  --sp-cyan: #4dd9ff;
+  --sp-blue: #4da3ff;
+
+  --sp-indigo: #7477ff;
+  --sp-violet: #9b7cff;
+
+
+  /* -------------------------------------------------------
+     TEXT
+     ------------------------------------------------------- */
+
+  --sp-text: #e7f5f2;
+  --sp-text-bright: #f2fbf9;
+
+  --sp-text-secondary: #b7d2cd;
+  --sp-text-muted: #7c9994;
+  --sp-text-placeholder: #5f7d78;
+
+
+  /* -------------------------------------------------------
+     BORDERS
+     ------------------------------------------------------- */
+
+  --sp-border:
+    rgba(77, 190, 181, 0.14);
+
+  --sp-border-hover:
+    rgba(77, 190, 181, 0.28);
+
+  --sp-border-active:
+    rgba(25, 211, 174, 0.70);
+
+
+  /* -------------------------------------------------------
+     SHADOWS
+     ------------------------------------------------------- */
+
+  --sp-shadow-small:
+    0 8px 25px rgba(1, 24, 32, 0.28);
+
+  --sp-shadow:
+    0 20px 65px rgba(1, 23, 31, 0.42);
+
+  --sp-shadow-large:
+    0 30px 90px rgba(1, 20, 28, 0.55);
+
+
+  /* -------------------------------------------------------
+     GLOW
+     ------------------------------------------------------- */
+
+  --sp-teal-glow:
+    0 0 45px rgba(25, 211, 174, 0.13);
+
+  --sp-blue-glow:
+    0 0 45px rgba(77, 163, 255, 0.10);
+
+
+  /* -------------------------------------------------------
+     RADIUS
+     ------------------------------------------------------- */
+
+  --sp-radius-sm: 8px;
+  --sp-radius-md: 12px;
+  --sp-radius-lg: 18px;
+  --sp-radius-xl: 24px;
+
+
+  /* -------------------------------------------------------
+     TRANSITIONS
+     ------------------------------------------------------- */
+
+  --sp-transition:
+    180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+
+  background: var(--sp-bg);
+
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+
+  min-width: 320px;
+  min-height: 100vh;
+
+  color: var(--sp-text);
+
+  line-height: 1.55;
+
+  background:
+    #0b252b;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+
+  color: inherit;
+
+  letter-spacing: 0;
+}
+
+p {
+  color: var(--sp-text-secondary);
+}
+
+label {
+  color: #b7d1cc;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   TEXT HELPERS
+   ========================================================= */
+
+.text-primary {
+  color: var(--sp-text-bright);
+}
+
+.text-secondary {
+  color: var(--sp-text-secondary);
+}
+
+.text-muted {
+  color: var(--sp-text-muted);
+}
+
+.text-brand {
+  color: var(--sp-teal-light) !important;
+}
+
+
+/* =========================================================
+   SELECTION
+   ========================================================= */
+
+::selection {
+  color: #05251e;
+
+  background:
+    var(--sp-teal);
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #071a22;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #16414b;
+
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #205c66;
+}
+
+
+/* =========================================================
+   AUTH BACKDROP
+   ========================================================= */
+
+.auth-backdrop {
+  position: relative;
+
+  min-height: 100vh;
+
+  isolation: isolate;
+
+  overflow: hidden;
+
+  background:
+    #0b252b;
+}
+
+
+/* =========================================================
+   AUTH ATMOSPHERE
+   ========================================================= */
+
+/*
+   Very subtle lighting.
+   No vignette.
+   No dark corners.
+*/
+
+.auth-backdrop::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    #0b252b;
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+
+/* =========================================================
+   SECONDARY LIGHT
+   ========================================================= */
+
+.auth-backdrop::after {
+  content: '';
+
+  position: absolute;
+
+  width: 420px;
+  height: 420px;
+
+  top: -180px;
+  right: -100px;
+
+  background:
+    #0b252b;
+
+  filter: blur(90px);
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+
+/* =========================================================
+   AUTH GRID
+   ========================================================= */
+
+.auth-panel-grid {
+  position: relative;
+
+  background-image:
+    none;
+
+  background-size: 42px 42px;
+
+  /*
+    IMPORTANT:
+    No mask.
+    No vignette.
+    Grid stays consistent across page.
+  */
+
+  mask-image: none;
+
+  -webkit-mask-image: none;
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.logo-script {
+  font-family:
+    'Newsreader Variable',
+    Georgia,
+    serif;
+
+  font-style: italic;
+
+  font-weight: 500;
+
+  font-variation-settings:
+    'opsz' 60;
+
+  letter-spacing: 0;
+
+  color: var(--sp-teal-light);
+
+  text-shadow:
+    0 0 25px rgba(25, 211, 174, 0.15);
+}
+
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+input,
+textarea,
+select {
+  width: 100%;
+
+  color: #e3f7f2 !important;
+
+  background:
+    #0b252b !important;
+
+  border:
+    1px solid
+    rgba(77, 190, 181, 0.18) !important;
+
+  border-radius: 13px;
+
+  transition:
+    background var(--sp-transition),
+    border-color var(--sp-transition),
+    box-shadow var(--sp-transition),
+    transform var(--sp-transition);
+}
+
+
+/* =========================================================
+   INPUT PLACEHOLDER
+   ========================================================= */
+
+input::placeholder,
+textarea::placeholder {
+  color:
+    var(--sp-text-placeholder) !important;
+
+  opacity: 1;
+}
+
+
+/* =========================================================
+   INPUT HOVER
+   ========================================================= */
+
+input:hover,
+textarea:hover,
+select:hover {
+  background:
+    #0b252b !important;
+
+  border-color:
+    rgba(77, 190, 181, 0.34) !important;
+}
+
+
+/* =========================================================
+   INPUT FOCUS
+   ========================================================= */
+
+input:focus,
+textarea:focus,
+select:focus {
+  color:
+    #f0fffc !important;
+
+  background:
+    #0b252b !important;
+
+  border-color:
+    var(--sp-teal) !important;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(25, 211, 174, 0.10),
+    0 12px 30px
+      rgba(2, 30, 36, 0.28);
+
+  transform:
+    translateY(-1px);
+}
+
+
+/* =========================================================
+   TEXTAREA
+   ========================================================= */
+
+textarea {
+  min-height: 120px;
+
+  resize: vertical;
+
+  line-height: 1.65;
+}
+
+
+/* =========================================================
+   SELECT
+   ========================================================= */
+
+select {
+  appearance: none;
+
+  color:
+    #e3f7f2 !important;
+
+  background-color:
+    #10313a !important;
+}
+
+select option {
+  color: #e3f7f2;
+
+  background: #0d2933;
+}
+
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 18px;
+  height: 18px;
+
+  padding: 0;
+
+  flex-shrink: 0;
+
+  background:
+    #0e2b34 !important;
+
+  border:
+    1px solid
+    rgba(77, 190, 181, 0.32) !important;
+
+  cursor: pointer;
+}
+
+input[type='checkbox'] {
+  border-radius: 5px;
+}
+
+input[type='radio'] {
+  border-radius: 50%;
+}
+
+
+/* =========================================================
+   CHECKED STATE
+   ========================================================= */
+
+input[type='checkbox']:checked,
+input[type='radio']:checked {
+  background:
+    var(--sp-teal) !important;
+
+  border-color:
+    var(--sp-teal) !important;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(25, 211, 174, 0.10);
+}
+
+
+/* Checkbox checkmark */
+
+input[type='checkbox']:checked::after {
+  content: '✓';
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  color: #052a21;
+
+  font-size: 12px;
+
+  font-weight: 900;
+}
+
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.sp-card {
+  position: relative;
+
+  background:
+    #0b252b;
+
+  border:
+    1px solid
+    rgba(77, 190, 181, 0.15);
+
+  border-radius:
+    var(--sp-radius-lg);
+
+  box-shadow:
+    var(--sp-shadow);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.sp-card:hover {
+  border-color:
+    rgba(77, 190, 181, 0.27);
+
+  box-shadow:
+    var(--sp-shadow-large);
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+   ========================================================= */
+
+button[type='submit'],
+.sp-button-primary {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  color: #05251e !important;
+
+  background: #d8ff4f !important;
+
+  border: none !important;
+
+  border-radius:
+    6px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 10px 32px
+    rgba(25, 211, 174, 0.18);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+
+/* Primary hover */
+
+button[type='submit']:hover,
+.sp-button-primary:hover {
+  filter:
+    brightness(1.07);
+
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 16px 42px
+    rgba(25, 211, 174, 0.27);
+}
+
+
+/* Primary active */
+
+button[type='submit']:active,
+.sp-button-primary:active {
+  transform:
+    translateY(0);
+}
+
+
+/* =========================================================
+   SECONDARY BUTTON
+   ========================================================= */
+
+.sp-button-secondary {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  color: #cbe4df !important;
+
+  background:
+    #12323c !important;
+
+  border:
+    1px solid
+    rgba(77, 190, 181, 0.18) !important;
+
+  border-radius:
+    12px;
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.sp-button-secondary:hover {
+  color: #ecfffb !important;
+
+  background:
+    #17404b !important;
+
+  border-color:
+    rgba(77, 210, 194, 0.35) !important;
+
+  transform:
+    translateY(-1px);
+}
+
+
+/* =========================================================
+   LINKS
+   ========================================================= */
+
+a {
+  color:
+    #49ddbd;
+
+  text-decoration:
+    none;
+
+  transition:
+    color 160ms ease,
+    text-shadow 160ms ease;
+}
+
+a:hover {
+  color:
+    #82ead5;
+
+  text-shadow:
+    0 0 18px
+    rgba(25, 211, 174, 0.16);
+}
+
+
+/* =========================================================
+   BADGE
+   ========================================================= */
+
+.sp-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding:
+    6px 11px;
+
+  color:
+    #72e4cb;
+
+  background:
+    rgba(25, 211, 174, 0.075);
+
+  border:
+    1px solid
+    rgba(25, 211, 174, 0.20);
+
+  border-radius:
+    999px;
+
+  font-size:
+    12px;
+
+  font-weight:
+    650;
+}
+
+
+/* =========================================================
+   DIVIDER
+   ========================================================= */
+
+.sp-divider {
+  width: 100%;
+
+  height: 1px;
+
+  background:
+    #0b252b;
+}
+
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+progress {
+  width: 100%;
+
+  height: 7px;
+
+  appearance: none;
+
+  border: none;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+
+  background:
+    #12343e;
+}
+
+progress::-webkit-progress-bar {
+  background:
+    #12343e;
+
+  border-radius:
+    999px;
+}
+
+progress::-webkit-progress-value {
+  background:
+    #0b252b;
+
+  border-radius:
+    999px;
+}
+
+progress::-moz-progress-bar {
+  background:
+    #0b252b;
+
+  border-radius:
+    999px;
+}
+
+
+/* =========================================================
+   CONTAINER
+   ========================================================= */
+
+.sp-container {
+  width:
+    min(
+      1180px,
+      calc(100% - 40px)
+    );
+
+  margin-inline:
+    auto;
+}
+
+
+/* =========================================================
+   GLOW
+   ========================================================= */
+
+.sp-glow {
+  box-shadow:
+    0 0 0 1px
+      rgba(25, 211, 174, 0.08),
+    0 0 55px
+      rgba(25, 211, 174, 0.08);
+}
+
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.sp-hover {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.sp-hover:hover {
+  transform:
+    translateY(-2px);
+}
+
+
+/* =========================================================
+   FADE ANIMATION
+   ========================================================= */
+
+@keyframes skillpathFadeUp {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+}
+
+.sp-fade-up {
+  animation:
+    skillpathFadeUp
+    500ms
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    )
+    both;
+}
+
+
+/* =========================================================
+   GLOW ANIMATION
+   ========================================================= */
+
+@keyframes skillpathGlow {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.sp-pulse {
+  animation:
+    skillpathGlow
+    2.6s
+    ease-in-out
+    infinite;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .sp-container {
+    width:
+      calc(100% - 28px);
+  }
+
+  .auth-panel-grid {
+    background-size:
+      32px 32px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size:
+      16px !important;
+  }
+}
+
+
+@media (max-width: 480px) {
+
+  .sp-container {
+    width:
+      calc(100% - 22px);
+  }
+
+  .auth-panel-grid {
+    background-size:
+      25px 25px;
+  }
+}
+
+
+/* =========================================================
+   FOCUS ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline:
+    2px solid
+    var(--sp-teal);
+
+  outline-offset:
+    3px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    scroll-behavior:
+      auto !important;
+  }
+}
+
+```
+

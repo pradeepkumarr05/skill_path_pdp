@@ -206,6 +206,37 @@ CREATE INDEX IF NOT EXISTS idx_candidates_username ON candidates(username);
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS google_sub TEXT UNIQUE;
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS setup JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS account_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  purpose TEXT NOT NULL CHECK (purpose IN ('verify','reset')),
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_account_tokens_candidate ON account_tokens(candidate_id, purpose);
+CREATE TABLE IF NOT EXISTS learning_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  assessment_id UUID NOT NULL REFERENCES skill_assessments(id) ON DELETE CASCADE,
+  model TEXT NOT NULL,
+  plan JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_learning_plans_candidate ON learning_plans(candidate_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS learning_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  plan_id UUID NOT NULL REFERENCES learning_plans(id) ON DELETE CASCADE,
+  lesson_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','completed','abandoned')),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_active ON learning_sessions(candidate_id) WHERE status='active';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_completed ON learning_sessions(plan_id,lesson_id) WHERE status='completed';
 CREATE TABLE IF NOT EXISTS candidate_documents (
   candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
   kind TEXT NOT NULL CHECK (kind IN ('resume', 'transcript')),

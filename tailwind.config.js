@@ -1,42 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  theme: {
-    extend: {
-      colors: {
-        skillpath: {
-          ink: '#151515',
-          night: '#101314',
-          forest: '#123D35',
-          teal: '#00A884',
-          citron: '#D7FF4F',
-          cream: '#F7F0E6',
-          paper: '#FFFCF6',
-          line: '#D9CDBE',
-          muted: '#6E665D',
-          danger: '#BC3930',
-          focus: '#007A63'
-        }
-      },
-      boxShadow: {
-        panel: '0 24px 60px rgba(16, 19, 20, 0.18)',
-        soft: '0 10px 24px rgba(21, 21, 21, 0.10)'
-      },
-      fontFamily: {
-        sans: ['Bricolage Grotesque Variable', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        logo: ['Newsreader Variable', 'Georgia', 'serif'],
-        mono: ['JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace']
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(4px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' }
-        }
-      },
-      animation: {
-        'fade-in': 'fadeIn 0.25s ease-out'
-      }
-    }
-  },
-  plugins: []
+  theme: { extend: {
+    colors: {
+      skillpath: { night:'#f7f8f7', cream:'#242e29', teal:'#456653', muted:'#64716a', danger:'#a13f43', line:'#dce2df' },
+      sp: { surface:'#fff', panel:'#f3f5f3', border:'#dce2df', 'border-active':'#557664', ink:'#242e29', body:'#425149', muted:'#64716a', ghost:'#7c8780', accent:'#456653', 'accent-light':'#eaf1eb', 'accent-dim':'#eaf1eb', purple:'#766380', 'purple-dim':'#f1edf4', blue:'#506f8d', 'blue-dim':'#eaf0f7', success:'#55735d', danger:'#a13f43', 'danger-dim':'#faeded', warn:'#8b652d', 'warn-dim':'#f6f0e5' },
+    },
+    fontFamily: { sans:['"Manrope Variable"','system-ui','sans-serif'], display:['"Manrope Variable"','system-ui','sans-serif'], mono:['Consolas','monospace'] },
+    borderRadius: { xs:'4px',sm:'6px',md:'8px',lg:'8px',xl:'8px','2xl':'8px' },
+    keyframes: { fadeUp: { '0%': {opacity:'0',transform:'translateY(8px)'},'100%':{opacity:'1',transform:'translateY(0)'} } },
+    animation: { 'fade-up':'fadeUp .3s ease both' },
+  } },
+  plugins: [],
 };

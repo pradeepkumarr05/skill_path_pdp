@@ -55,7 +55,7 @@ try {
   await screenshot('06-dashboard');
   await page.reload();
   await page.getByRole('heading', { name: 'Learning Gap Engine' }).waitFor();
-  await page.getByRole('button', { name: 'Edit profile' }).click();
+  await page.getByRole('link', { name: 'Profile', exact: true }).click();
   assert.equal(await page.getByLabel('Age', { exact: true }).inputValue(), '24');
   assert.equal(await page.getByLabel('CGPA').inputValue(), '8.4');
   await page.reload();
@@ -85,10 +85,11 @@ try {
   await screenshot('12-learning-roadmap');
   await page.reload();
   await page.getByRole('heading', { name: 'Learning Gap Engine' }).waitFor();
-  await page.getByText(/Latest result:/).waitFor();
+  await page.getByRole('link', { name: 'Assessments', exact: true }).click();
+  await page.getByText(/Latest deterministic result:/).waitFor();
   await screenshot('13-returning-dashboard');
   assert.deepEqual(errors, []);
-  await writeFile(`screenshots/browser-results-${mobileRun ? 'mobile' : 'desktop'}.json`, JSON.stringify({ passed: true, captures, media: 'Chromium simulated camera and screen', ai: 'Live configured Gemini SDK', checks: ['signup', 'PDF content validation', 'profile persistence', 'session restore', 'camera playback', 'chatbot progression', 'deterministic scoring', 'results restore', 'responsive overflow', 'no runtime page errors'] }, null, 2));
+  await writeFile(`screenshots/browser-results-${mobileRun ? 'mobile' : 'desktop'}.json`, JSON.stringify({ passed: true, captures, media: 'Chromium simulated camera and screen', ai: process.env.ALLOW_DETERMINISTIC_AI_FALLBACK === 'true' ? 'Deterministic fallback enabled for local verification' : 'Live configured Gemini SDK', checks: ['signup', 'PDF content validation', 'profile persistence', 'session restore', 'camera playback', 'chatbot progression', 'deterministic scoring', 'results restore', 'responsive overflow', 'no runtime page errors'] }, null, 2));
   await rm('screenshots/browser-failure.png', { force: true });
   console.log('Browser workflow passed:', captures.join(', '));
 } catch (error) {

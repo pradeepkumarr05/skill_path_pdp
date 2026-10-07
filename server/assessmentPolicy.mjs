@@ -8,3 +8,10 @@ export function validateProctorEvent(payload) {
 export function selectedAnswer(value, choiceCount) {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < choiceCount ? value : null;
 }
+
+export function interviewDecision(value, difficulty, timedOut = false) {
+  if (!timedOut && (typeof value !== 'number' || !Number.isFinite(value))) throw new Error('Invalid interview score.');
+  const score = timedOut ? 0 : Math.max(0, Math.min(100, Math.round(value)));
+  const pass = score >= (difficulty === 'hard' ? 70 : 65);
+  return { score, pass, level: score >= 85 ? 'strong' : score >= 70 ? 'job_ready' : score >= 45 ? 'developing' : 'novice', nextAction: difficulty === 'medium' && pass ? 'ask_hard' : 'complete_skill' };
+}

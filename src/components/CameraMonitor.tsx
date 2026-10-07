@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AssessmentAccessGrant } from '../types/assessment';
 
 // Frames remain local. Motion events are review signals, not cheating verdicts.
 export function CameraMonitor({ access, active, report }: { access: AssessmentAccessGrant; active: boolean; report: (type: string, detail: string) => void }) {
+  const [warning, setWarning] = useState('');
   const reportRef = useRef(report);
   reportRef.current = report;
   useEffect(() => {
@@ -18,7 +19,9 @@ export function CameraMonitor({ access, active, report }: { access: AssessmentAc
     function flag(type: string, detail: string) {
       const cooldown = type === 'camera_motion' || type === 'camera_obscured' ? 30000 : 1000;
       if (Date.now() - (reported.get(type) || 0) < cooldown) return;
-      reported.set(type, Date.now()); reportRef.current(type, detail);
+      reported.set(type, Date.now());
+      if (type === 'camera_motion' || type === 'camera_obscured') setWarning(detail);
+      reportRef.current(type, detail);
     }
     const interval = window.setInterval(() => {
       const camera = access.cameraStream?.getVideoTracks()[0];
@@ -42,5 +45,5 @@ export function CameraMonitor({ access, active, report }: { access: AssessmentAc
     }, 1000);
     return () => { clearInterval(interval); video.pause(); video.srcObject = null; };
   }, [access, active]);
-  return null;
+  return active && warning ? <div role="alert" className="sp-notice sp-notice-danger" style={{ position:'fixed', top:8, left:16, right:16, zIndex:100, display:'flex', justifyContent:'space-between', gap:16 }}><span>{warning}</span><button type="button" onClick={()=>setWarning('')}>Dismiss</button></div> : null;
 }

@@ -1,0 +1,246 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "welcome",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signin",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signup",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "recovery",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "dashboard-new-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "results-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "roadmap-empty-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "profile-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-personal-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-education-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-career-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "guidelines-fixture",
+      "width": 1440,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "welcome",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signin",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signup",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "recovery",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "dashboard-new-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "results-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "roadmap-empty-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "profile-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-personal-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-education-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-career-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "guidelines-fixture",
+      "width": 800,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "welcome",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signin",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signup",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "recovery",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "dashboard-new-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "results-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "roadmap-empty-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "profile-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-personal-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-education-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-career-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "guidelines-fixture",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "welcome",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signin",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "signup",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "recovery",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "dashboard-new-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "results-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "roadmap-empty-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "profile-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-personal-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-education-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "setup-career-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "guidelines-fixture",
+      "width": 320,
+      "horizontalOverflow": false
+    }
+  ],
+  "fixtureNotice": "Authenticated screenshots use a temporary database test account. Populated roadmap is a test fixture, not live Hugging Face output. No real media permissions or 10-minute browser session claimed."
+}
